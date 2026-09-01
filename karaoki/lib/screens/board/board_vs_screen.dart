@@ -3,7 +3,6 @@ import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../widgets/cards.dart';
-import '../../widgets/ui_components.dart';
 
 class BoardVsScreen extends StatelessWidget {
   final String playerAName;

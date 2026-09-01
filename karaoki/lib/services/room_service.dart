@@ -109,7 +109,6 @@ class StubRoomService implements RoomService {
 
   String _generateCode() {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const digits = '0123456789';
     final rng = DateTime.now().microsecondsSinceEpoch;
     String code = 'KARA-';
     for (int i = 0; i < 4; i++) {

@@ -5,7 +5,6 @@ import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/cards.dart';
-import '../../widgets/ui_components.dart';
 
 class LobbyScreen extends StatelessWidget {
   final String roomName;

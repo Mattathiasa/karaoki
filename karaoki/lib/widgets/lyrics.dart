@@ -195,13 +195,6 @@ class KDuetLyricWidget extends StatelessWidget {
     final isPartA = part == 'A';
     final isPartB = part == 'B';
     final isBoth = part == 'BOTH';
-
-    final fillColor = isBoth
-        ? null // use dual gradient
-        : isPartA
-            ? KColors.lime
-            : KColors.teal;
-
     final borderColor = isPartA ? KColors.lime : KColors.teal;
     final dimmed = isPartB ? 0.6 : 1.0;
 
