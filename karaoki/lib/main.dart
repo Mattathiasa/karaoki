@@ -29,7 +29,7 @@ class KaraokiApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Karaoki',
+      title: 'Zemaoki',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
@@ -54,29 +54,162 @@ class KaraokiRouter extends StatefulWidget {
   State<KaraokiRouter> createState() => _KaraokiRouterState();
 }
 
+const _screenLabels = {
+  _Screen.splash: 'Splash',
+  _Screen.onboarding: 'Onboarding',
+  _Screen.welcome: 'Welcome',
+  _Screen.home: 'Home',
+  _Screen.lobby: 'Lobby',
+  _Screen.library: 'Library',
+  _Screen.singing: 'Singing',
+  _Screen.complete: 'Complete',
+  _Screen.leaderboard: 'Leaderboard',
+  _Screen.boardWait: 'Board: Wait',
+  _Screen.boardPerf: 'Board: Performance',
+  _Screen.boardReveal: 'Board: Reveal',
+  _Screen.boardCountdown: 'Board: Countdown',
+  _Screen.boardQueue: 'Board: Queue',
+  _Screen.boardVs: 'Board: VS',
+  _Screen.boardLeaderboard: 'Board: Leaderboard',
+  _Screen.battle: 'Battle',
+  _Screen.team: 'Team',
+  _Screen.duet: 'Duet',
+  _Screen.passMic: 'Pass the Mic',
+  _Screen.emptyQueue: 'Edge: Empty Queue',
+  _Screen.noResults: 'Edge: No Results',
+  _Screen.micPermission: 'Edge: Mic Permission',
+  _Screen.micLost: 'Edge: Mic Lost',
+  _Screen.weakConnection: 'Edge: Weak Connection',
+  _Screen.playerDropped: 'Edge: Player Dropped',
+  _Screen.roomFull: 'Edge: Room Full',
+  _Screen.badCode: 'Edge: Bad Code',
+  _Screen.unavailable: 'Edge: Unavailable',
+  _Screen.noHistory: 'Edge: No History',
+  _Screen.noBadges: 'Edge: No Badges',
+  _Screen.waiting: 'Edge: Waiting',
+};
+
+const _screenGroups = [
+  ('Onboarding', [_Screen.splash, _Screen.onboarding, _Screen.welcome]),
+  ('Core', [_Screen.home, _Screen.lobby, _Screen.library, _Screen.singing, _Screen.complete, _Screen.leaderboard]),
+  ('Board', [_Screen.boardWait, _Screen.boardCountdown, _Screen.boardQueue, _Screen.boardPerf, _Screen.boardVs, _Screen.boardReveal, _Screen.boardLeaderboard]),
+  ('Game Modes', [_Screen.battle, _Screen.team, _Screen.duet, _Screen.passMic]),
+  ('Edge States', [_Screen.emptyQueue, _Screen.noResults, _Screen.micPermission, _Screen.micLost, _Screen.weakConnection, _Screen.playerDropped, _Screen.roomFull, _Screen.badCode, _Screen.unavailable, _Screen.noHistory, _Screen.noBadges, _Screen.waiting]),
+];
+
 class _KaraokiRouterState extends State<KaraokiRouter> {
   _Screen _currentScreen = _Screen.splash;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 220),
-      transitionBuilder: (child, animation) {
-        return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.05),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOut,
+    return Scaffold(
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.05),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              )),
+              child: child,
+            ),
+          );
+        },
+        child: _buildScreen(),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showScreenPicker(context),
+        backgroundColor: KColors.ink600,
+        child: const Icon(Icons.grid_view, color: KColors.bone, size: 20),
+      ),
+    );
+  }
+
+  void _showScreenPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: KColors.ink700,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.3,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) => ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.all(20),
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: KColors.bone28,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Text(
+              'NAVIGATE TO SCREEN',
+              style: TextStyle(
+                fontFamily: 'SpaceMono',
+                fontSize: 10,
+                color: KColors.bone45,
+                letterSpacing: 0.16,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ..._screenGroups.map((group) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  group.$1.toUpperCase(),
+                  style: const TextStyle(
+                    fontFamily: 'SpaceMono',
+                    fontSize: 9,
+                    color: KColors.lime,
+                    letterSpacing: 0.16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...group.$2.map((screen) => ListTile(
+                  dense: true,
+                  title: Text(
+                    _screenLabels[screen] ?? '',
+                    style: TextStyle(
+                      fontFamily: 'InstrumentSans',
+                      fontSize: 14,
+                      color: _currentScreen == screen ? KColors.lime : KColors.bone,
+                    ),
+                  ),
+                  trailing: _currentScreen == screen
+                      ? Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: KColors.lime,
+                            shape: BoxShape.circle,
+                          ),
+                        )
+                      : null,
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() => _currentScreen = screen);
+                  },
+                )),
+                const SizedBox(height: 12),
+              ],
             )),
-            child: child,
-          ),
-        );
-      },
-      child: _buildScreen(),
+          ],
+        ),
+      ),
     );
   }
 
