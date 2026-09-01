@@ -1,7 +1,7 @@
-# Handoff: Karaoki — multiplayer karaoke platform
+# Handoff: Zemaoki — multiplayer karaoke platform
 
 ## Overview
-Karaoki is a party karaoke platform made of two connected clients:
+Zemaoki is a party karaoke platform made of two connected clients:
 
 1. **Mobile player app** (Flutter Android/iOS, portrait) — each guest's mic, controller, song browser and personal lyric sheet.
 2. **Karaoke Board** (Flutter Web, landscape, 1280×720+) — the shared TV screen: room code + QR, queue, synchronised lyrics, live scoring, podium.

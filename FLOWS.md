@@ -1,4 +1,4 @@
-# Karaoki — flows, state and realtime contract
+# Zemaoki — flows, state and realtime contract
 
 ## 1. Navigation flows
 

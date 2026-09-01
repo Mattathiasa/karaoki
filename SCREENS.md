@@ -1,4 +1,4 @@
-# Karaoki — screen-by-screen implementation spec
+# Zemaoki — screen-by-screen implementation spec
 
 Screen keys match the prototype's left rail and its `startScreen` tweak, so you can open any screen directly.
 
@@ -34,7 +34,7 @@ Illustrations: onb1 = striped placeholder + lime wash (replace with real art); o
 Back icon button · title 28px · labelled fields (mono 11.5 label, 15px input, panel fill, hairline, radius 14) · "Forgot password?" right-aligned lime · primary pill at bottom · text link to the other screen. Signup adds a mint "Microphone detected — sounds good" strip. Validation: email format on blur, password ≥ 8, inline red hairline + message.
 
 ### 8. `setup`
-Avatar picker 110px squircle with a 36px edit affordance · Display name + Username fields (username prefixed `@`, availability check) · genre chips (multi-select pills, 8 options) · experience level 2×2 grid (Beginner / Casual / Performer / Karaoke Legend; selected = lime-tinted fill + lime border + ✓) · "Enter Karaoki" primary.
+Avatar picker 110px squircle with a 36px edit affordance · Display name + Username fields (username prefixed `@`, availability check) · genre chips (multi-select pills, 8 options) · experience level 2×2 grid (Beginner / Casual / Performer / Karaoke Legend; selected = lime-tinted fill + lime border + ✓) · "Enter Zemaoki" primary.
 
 ---
 
@@ -146,7 +146,7 @@ MICROPHONE card: "Input level" + mint `GOOD` + live 30px meter. Rows: Audio qual
 | --- | --- | --- |
 | `emptyQueue` | Queue length 0 | 96px dashed ♫ tile, "Nothing queued yet", "The board is waiting. Whoever adds the first song sings first.", primary "Add the first song" |
 | `noResults` | Search returns 0 | red-bordered field, 40px ⌕, "No songs match "zzqqx"", spelling hint, "TRY INSTEAD" genre pills |
-| `micPerm` | Permission not granted | Bottom sheet over 90% scrim: 56px mic tile, "Karaoki needs your microphone", plain-language privacy line ("We listen only while you are singing… nothing is recorded or uploaded"), Allow primary + "Not now — I'll just watch" |
+| `micPerm` | Permission not granted | Bottom sheet over 90% scrim: 56px mic tile, "Zemaoki needs your microphone", plain-language privacy line ("We listen only while you are singing… nothing is recorded or uploaded"), Allow primary + "Not now — I'll just watch" |
 | `micLost` | Input drops mid-song | Red banner "Microphone disconnected / Scoring paused — the board is holding your slot", lyrics dimmed to 35%, "RECONNECTING" 3-dot indicator, bone "Reconnect microphone" |
 | `weak` | RTT > 500ms | Gold banner "Weak connection — lyrics running locally, score syncs when you're back", lyrics stay full brightness, LATENCY 840ms + SCORE "syncing…" cards, "Keep singing anyway". Status bar also shows `◔ WEAK` |
 | `dropped` | Peer presence lost | Red card "Dawit dropped out / Holding their queue slot for 0:47" with a live countdown, roster below, Skip their slot / Wait for them |
