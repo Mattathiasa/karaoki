@@ -436,7 +436,7 @@ class KRankBadge extends StatelessWidget {
         border: Border.all(color: _color.withOpacity(0.5), width: 1),
       ),
       child: Text(
-        '$rank $emoji',
+        rank,
         style: KTypography.monoLabel.copyWith(
           fontSize: 14,
           color: _color,
@@ -458,7 +458,7 @@ class KComboBadge extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text('🔥', style: TextStyle(fontSize: 34)),
+        Icon(Icons.whatshot, color: KColors.gold, size: 34),
         const SizedBox(width: 8),
         Text(
           'x$combo',

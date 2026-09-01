@@ -184,7 +184,7 @@ class HomeScreen extends StatelessWidget {
                               border: Border.all(color: KColors.hairline),
                             ),
                             alignment: Alignment.center,
-                            child: const Text('🎤', style: TextStyle(fontSize: 28)),
+                            child: const Icon(Icons.mic, color: KColors.bone28, size: 28),
                           ),
                         ),
                         // Bottom text
@@ -482,7 +482,7 @@ class HomeScreen extends StatelessWidget {
                               style: KTypography.monoLabel.copyWith(fontSize: 9),
                             ),
                             const SizedBox(height: 8),
-                            const Text('🏅', style: TextStyle(fontSize: 26)),
+                            const Icon(Icons.emoji_events, color: KColors.gold, size: 26),
                             const SizedBox(height: 4),
                             Text(
                               'Pitch Perfect',

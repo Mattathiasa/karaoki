@@ -30,7 +30,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 alignment: Alignment.center,
-                child: const Text('🎤', style: TextStyle(fontSize: 28)),
+                child: const Icon(Icons.mic, color: KColors.onAccent, size: 28),
               ),
               const SizedBox(height: 24),
               // Title

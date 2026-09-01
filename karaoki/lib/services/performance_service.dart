@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import '../models/song.dart';
 
-/// Performance service — manages the song clock and score computation
+/// Performance service: manages the song clock and score computation
 class PerformanceService {
   Timer? _timer;
   final _controller = StreamController<PerformanceState>.broadcast();
@@ -132,7 +132,7 @@ class PerformanceState {
   }
 
   String get currentLine {
-    if (song.lyrics.isEmpty) return '♪ ♪ ♪';
+    if (song.lyrics.isEmpty) return '...';
     return song.lyrics[currentLineIndex].text;
   }
 

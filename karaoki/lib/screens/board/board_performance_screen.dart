@@ -262,7 +262,7 @@ class BoardPerformanceScreen extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('🔥', style: TextStyle(fontSize: 34)),
+                        Icon(Icons.whatshot, color: KColors.gold, size: 34),
                         const SizedBox(width: 8),
                         Text(
                           'x$combo',

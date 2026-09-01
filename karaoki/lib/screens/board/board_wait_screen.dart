@@ -61,7 +61,7 @@ class BoardWaitScreen extends StatelessWidget {
                             ),
                           ),
                           alignment: Alignment.center,
-                          child: const Text('🎤', style: TextStyle(fontSize: 24)),
+                          child: const Icon(Icons.mic, color: KColors.onAccent, size: 24),
                         ),
                         const SizedBox(width: 16),
                         Text(

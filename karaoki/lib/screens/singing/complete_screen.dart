@@ -42,7 +42,7 @@ class CompleteScreen extends StatelessWidget {
               KScoreBadge(score: score),
               const SizedBox(height: 12),
               // Rank
-              KRankBadge(rank: 'SUPERSTAR', emoji: '🔥'),
+              const KRankBadge(rank: 'SUPERSTAR'),
               const SizedBox(height: 12),
               // Personal best
               if (isNewBest)

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Karaoki design system color tokens
-/// Canonical values from oklch() — hex approximations for Flutter
+/// Karaoki design system color tokens  /// Canonical values from oklch(), hex approximations for Flutter
 class KColors {
   KColors._();
 

@@ -100,9 +100,10 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ),
                         alignment: Alignment.center,
-                        child: const Text(
-                          '🎤',
-                          style: TextStyle(fontSize: 52),
+                        child: const Icon(
+                          Icons.mic,
+                          size: 52,
+                          color: KColors.onAccent,
                         ),
                       ),
                     ],

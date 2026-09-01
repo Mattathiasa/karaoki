@@ -8,7 +8,7 @@ class KLyricWidget extends StatelessWidget {
   final String? previousLine;
   final String currentLine;
   final String? nextLine;
-  final double lineProgress; // 0.0 to 1.0 — the wipe position
+  final double lineProgress; // 0.0 to 1.0, the wipe position
 
   const KLyricWidget({
     super.key,

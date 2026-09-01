@@ -1,6 +1,6 @@
 import '../models/room.dart';
 
-/// Abstract room service — in production backed by Firebase Realtime Database
+/// Abstract room service: in production backed by Firebase Realtime Database
 abstract class RoomService {
   Future<Room> createRoom({
     required String name,

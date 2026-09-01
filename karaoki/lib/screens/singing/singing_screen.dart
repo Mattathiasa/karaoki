@@ -157,7 +157,7 @@ class SingingScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   _MetricCard(
-                    label: '🔥 COMBO',
+                    label: 'COMBO',
                     value: 'x$combo',
                     color: KColors.lime,
                   ),

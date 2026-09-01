@@ -144,7 +144,7 @@ class ScoreBreakdown {
 
   String get rankEmoji {
     switch (rank) {
-      case 'SUPERSTAR': return '🔥';
+      case 'SUPERSTAR': return '';
       case 'GREAT': return '⭐';
       case 'SOLID': return '👍';
       default: return '';

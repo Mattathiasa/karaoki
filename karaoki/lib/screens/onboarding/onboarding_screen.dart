@@ -19,17 +19,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _OnboardingPage(
       title: 'Sing. Compete.\nHave Fun.',
       body: 'Karaoki turns any room into a karaoke stage. Queue songs, take turns singing, and compete for the highest score.',
-      illustration: '🎤',
+      illustration: 'mic',
     ),
     _OnboardingPage(
       title: 'Your Phone Becomes\nYour Microphone.',
       body: 'No extra hardware needed. Your phone captures your voice and sends it to the board in real time. Just tap and sing.',
-      illustration: '📱→📺',
+      illustration: 'connect',
     ),
     _OnboardingPage(
       title: 'Become the\nKaraoke Champion.',
       body: 'Get scored on pitch, timing, and energy. Climb the leaderboard, unlock achievements, and earn your spot as a Karaoki Legend.',
-      illustration: '🏆',
+      illustration: 'trophy',
     ),
   ];
 
@@ -149,9 +149,10 @@ class _OnboardingPage extends StatelessWidget {
               border: Border.all(color: KColors.hairline, width: 0.5),
             ),
             alignment: Alignment.center,
-            child: Text(
-              illustration,
-              style: const TextStyle(fontSize: 80),
+            child: Icon(
+              illustration == 'mic' ? Icons.mic : illustration == 'connect' ? Icons.wifi : Icons.emoji_events,
+              size: 80,
+              color: KColors.bone28,
             ),
           ),
           const SizedBox(height: 40),

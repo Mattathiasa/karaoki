@@ -12,8 +12,12 @@ import 'screens/leaderboard/leaderboard_screen.dart';
 import 'screens/board/board_wait_screen.dart';
 import 'screens/board/board_performance_screen.dart';
 import 'screens/board/board_reveal_screen.dart';
-import 'screens/lobby/lobby_screen.dart' show LobbyPlayer;
-import 'screens/board/board_reveal_screen.dart' show RankingEntry;
+import 'screens/board/board_countdown_screen.dart';
+import 'screens/board/board_queue_screen.dart';
+import 'screens/board/board_vs_screen.dart';
+import 'screens/board/board_leaderboard_screen.dart';
+import 'screens/edge_states/edge_states.dart';
+import 'screens/game_modes/game_modes.dart';
 
 void main() {
   runApp(const KaraokiApp());
@@ -205,6 +209,114 @@ class _KaraokiRouterState extends State<KaraokiRouter> {
             RankingEntry(name: 'Dawit', initial: 'D', score: 72),
           ],
         );
+
+      case _Screen.boardCountdown:
+        return BoardCountdownScreen(
+          key: const ValueKey('boardCountdown'),
+          singerName: 'Matt',
+          songTitle: 'Neon Midnight',
+          onComplete: () => setState(() => _currentScreen = _Screen.boardPerf),
+        );
+
+      case _Screen.boardQueue:
+        return BoardQueueScreen(
+          key: const ValueKey('boardQueue'),
+          currentTitle: 'Neon Midnight',
+          currentArtist: 'Vela Cruz',
+          singerName: 'Matt',
+          progress: 0.42,
+        );
+
+      case _Screen.boardVs:
+        return const BoardVsScreen(
+          key: ValueKey('boardVs'),
+          songTitle: 'Neon Midnight',
+        );
+
+      case _Screen.boardLeaderboard:
+        return BoardLeaderboardScreen(
+          key: const ValueKey('boardLeaderboard'),
+          roomName: 'Friday Night Fire',
+          entries: const [
+            BoardLeaderboardEntry(name: 'Matt', initial: 'M', score: 96),
+            BoardLeaderboardEntry(name: 'Sara', initial: 'S', score: 84),
+            BoardLeaderboardEntry(name: 'Dawit', initial: 'D', score: 72),
+            BoardLeaderboardEntry(name: 'Leah', initial: 'L', score: 68),
+          ],
+          nextSong: 'Concrete Halo',
+          nextPlayer: 'Sara',
+        );
+
+      case _Screen.battle:
+        return const BattleScreen(key: ValueKey('battle'));
+
+      case _Screen.team:
+        return const TeamScreen(key: ValueKey('team'));
+
+      case _Screen.duet:
+        return const DuetScreen(key: ValueKey('duet'));
+
+      case _Screen.passMic:
+        return const PassMicScreen(key: ValueKey('passMic'));
+
+      case _Screen.emptyQueue:
+        return EmptyQueueScreen(
+          key: const ValueKey('emptyQueue'),
+          onAddSong: () => setState(() => _currentScreen = _Screen.library),
+        );
+
+      case _Screen.noResults:
+        return const NoResultsScreen(
+          key: ValueKey('noResults'),
+          query: 'zzqqx',
+        );
+
+      case _Screen.micPermission:
+        return MicPermissionScreen(
+          key: const ValueKey('micPermission'),
+          onAllow: () => setState(() => _currentScreen = _Screen.home),
+          onSkip: () => setState(() => _currentScreen = _Screen.home),
+        );
+
+      case _Screen.micLost:
+        return const MicLostScreen(key: ValueKey('micLost'));
+
+      case _Screen.weakConnection:
+        return const WeakConnectionScreen(key: ValueKey('weakConnection'));
+
+      case _Screen.playerDropped:
+        return PlayerDroppedScreen(
+          key: const ValueKey('playerDropped'),
+          playerName: 'Dawit',
+        );
+
+      case _Screen.roomFull:
+        return const RoomFullScreen(key: ValueKey('roomFull'));
+
+      case _Screen.badCode:
+        return const BadCodeScreen(
+          key: ValueKey('badCode'),
+          code: 'KARA-9999',
+        );
+
+      case _Screen.unavailable:
+        return const UnavailableSongScreen(
+          key: ValueKey('unavailable'),
+          songTitle: 'Neon Midnight',
+          alternatives: ['Slow Gold', 'Tequila Sunrise Radio', 'Old Sepia Letters'],
+        );
+
+      case _Screen.noHistory:
+        return NoHistoryScreen(
+          key: const ValueKey('noHistory'),
+          onPickSong: () => setState(() => _currentScreen = _Screen.library),
+        );
+
+      case _Screen.noBadges:
+        return const NoBadgesScreen(key: ValueKey('noBadges'));
+
+      case _Screen.waiting:
+        return const WaitingScreen(key: ValueKey('waiting'));
     }
   }
 }
@@ -222,6 +334,26 @@ enum _Screen {
   boardWait,
   boardPerf,
   boardReveal,
+  boardCountdown,
+  boardQueue,
+  boardVs,
+  boardLeaderboard,
+  battle,
+  team,
+  duet,
+  passMic,
+  emptyQueue,
+  noResults,
+  micPermission,
+  micLost,
+  weakConnection,
+  playerDropped,
+  roomFull,
+  badCode,
+  unavailable,
+  noHistory,
+  noBadges,
+  waiting,
 }
 
 
