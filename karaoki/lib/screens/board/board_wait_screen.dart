@@ -11,7 +11,7 @@ class BoardWaitScreen extends StatelessWidget {
   final String mode;
   final int playerCount;
   final int maxPlayers;
-  final List<_BoardPlayer> players;
+final List<BoardPlayer> players;
 
   const BoardWaitScreen({
     super.key,
@@ -121,7 +121,7 @@ class BoardWaitScreen extends StatelessWidget {
                         const SizedBox(width: 12),
                         _BoardMetaPill(label: 'MAX $maxPlayers PLAYERS'),
                         const SizedBox(width: 12),
-                        _BoardMetaPill(label: 'PRIVATE ROOM', color: KColors.mint),
+                        const _BoardMetaPill(label: 'PRIVATE ROOM', color: KColors.mint),
                       ],
                     ),
                   ],
@@ -264,12 +264,12 @@ class _BoardPlayerCard extends StatelessWidget {
   }
 }
 
-class _BoardPlayer {
+class BoardPlayer {
   final String name;
   final String initial;
   final bool ready;
 
-  const _BoardPlayer({
+  const BoardPlayer({
     required this.name,
     required this.initial,
     this.ready = false,

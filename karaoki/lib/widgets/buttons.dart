@@ -70,10 +70,10 @@ class _KPrimaryButtonState extends State<KPrimaryButton>
             borderRadius: BorderRadius.circular(KRadius.pill),
             boxShadow: enabled
                 ? [
-                    BoxShadow(
+                    const BoxShadow(
                       color: KColors.limeShadow,
                       blurRadius: 30,
-                      offset: const Offset(0, 14),
+                      offset: Offset(0, 14),
                       spreadRadius: -12,
                     ),
                   ]

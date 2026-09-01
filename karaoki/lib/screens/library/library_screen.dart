@@ -33,8 +33,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
         child: Column(
           children: [
             // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
+            const Padding(
+              padding: EdgeInsets.fromLTRB(
                 KSpacing.mobilePaddingH,
                 KSpacing.mobilePaddingV,
                 KSpacing.mobilePaddingH,
@@ -42,9 +42,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ),
               child: Row(
                 children: [
-                  const KIconButton(icon: Icons.arrow_back_ios_new, size: 34),
-                  const SizedBox(width: 12),
-                  const Expanded(
+                  KIconButton(icon: Icons.arrow_back_ios_new, size: 34),
+                  SizedBox(width: 12),
+                  Expanded(
                     child: Text(
                       'Song Library',
                       style: TextStyle(
@@ -55,7 +55,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       ),
                     ),
                   ),
-                  const KIconButton(icon: Icons.search, size: 34),
+                  KIconButton(icon: Icons.search, size: 34),
                 ],
               ),
             ),
@@ -141,9 +141,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     style: KTypography.monoLabel.copyWith(fontSize: 9),
                   ),
                   const SizedBox(width: 12),
-                  _FilterTag(label: 'DIFFICULTY ▾'),
+                  const _FilterTag(label: 'DIFFICULTY ▾'),
                   const SizedBox(width: 8),
-                  _FilterTag(label: 'POPULAR ▾'),
+                  const _FilterTag(label: 'POPULAR ▾'),
                 ],
               ),
             ),

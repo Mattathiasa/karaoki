@@ -217,8 +217,8 @@ class TeamScreen extends StatelessWidget {
   final int totalSongs;
   final String currentSinger;
   final String currentTeam;
-  final List<_TeamPlayer> firePlayers;
-  final List<_TeamPlayer> lightningPlayers;
+  final List<TeamPlayer> firePlayers;
+  final List<TeamPlayer> lightningPlayers;
 
   const TeamScreen({
     super.key,
@@ -371,10 +371,10 @@ class _TeamCard extends StatelessWidget {
   }
 }
 
-class _TeamPlayer {
+class TeamPlayer {
   final String name;
   final bool isSinging;
-  const _TeamPlayer({required this.name, this.isSinging = false});
+  const TeamPlayer({required this.name, this.isSinging = false});
 }
 
 // ─── Duet ───────────────────────────────────────────────────────────────────
@@ -429,21 +429,21 @@ class DuetScreen extends StatelessWidget {
             ),
 
             // Lyrics
-            Expanded(
+            const Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: KSpacing.massive),
+                padding: EdgeInsets.symmetric(horizontal: KSpacing.massive),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Part A
                     _DuetLine(text: 'We were never meant to last this long', part: 'A'),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     // Part B
                     _DuetLine(text: 'Dancing in the neon midnight glow', part: 'B'),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     // Both
                     _DuetLine(text: 'This is our neon midnight', part: 'BOTH'),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     _DuetLine(text: "But here we are, just proving them wrong", part: 'A', dimmed: true),
                   ],
                 ),
@@ -521,7 +521,7 @@ class PassMicScreen extends StatelessWidget {
   final int totalSections;
   final String nextSinger;
   final int linesUntil;
-  final List<_PassPlayer> players;
+final List<PassPlayer> players;
 
   const PassMicScreen({
     super.key,
@@ -595,13 +595,13 @@ class PassMicScreen extends StatelessWidget {
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
+                children: const [
                   _PassRow(label: 'DONE', score: 91, color: KColors.mint, done: true),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   _PassRow(label: 'SINGING', score: 0, color: KColors.teal, active: true),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   _PassRow(label: 'NEXT', score: 0, color: KColors.lime, isNext: true),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   _PassRow(label: 'QUEUED', score: 0, color: KColors.bone28, queued: true),
                 ],
               ),
@@ -671,7 +671,7 @@ class _PassRow extends StatelessWidget {
   }
 }
 
-class _PassPlayer {
+class PassPlayer {
   final String name;
-  const _PassPlayer({required this.name});
+  const PassPlayer({required this.name});
 }

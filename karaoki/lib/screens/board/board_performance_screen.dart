@@ -22,7 +22,7 @@ class BoardPerformanceScreen extends StatelessWidget {
   final int combo;
   final String elapsed;
   final String duration;
-  final List<_QueuePill> upNext;
+  final List<QueuePill> upNext;
 
   const BoardPerformanceScreen({
     super.key,
@@ -114,7 +114,7 @@ class BoardPerformanceScreen extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        KLiveDot(color: KColors.red, size: 6),
+                        const KLiveDot(color: KColors.red, size: 6),
                         const SizedBox(width: 6),
                         Text(
                           'LIVE',
@@ -262,7 +262,7 @@ class BoardPerformanceScreen extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.whatshot, color: KColors.gold, size: 34),
+                        const Icon(Icons.whatshot, color: KColors.gold, size: 34),
                         const SizedBox(width: 8),
                         Text(
                           'x$combo',
@@ -344,9 +344,9 @@ class _BottomColumn extends StatelessWidget {
   }
 }
 
-class _QueuePill {
+class QueuePill {
   final String title;
   final String requester;
 
-  const _QueuePill({required this.title, required this.requester});
+  const QueuePill({required this.title, required this.requester});
 }

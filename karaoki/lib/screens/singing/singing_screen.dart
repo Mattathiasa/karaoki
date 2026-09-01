@@ -61,7 +61,7 @@ class SingingScreen extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        KLiveDot(color: KColors.red, size: 6),
+                        const KLiveDot(color: KColors.red, size: 6),
                         const SizedBox(width: 6),
                         Text(
                           'YOU ARE SINGING',

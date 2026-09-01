@@ -120,7 +120,7 @@ class BoardLeaderboardScreen extends StatelessWidget {
                             fontSize: 22, color: KColors.bone,
                           )),
                           const SizedBox(width: 16),
-                          Text('${entries[3].score}', style: TextStyle(
+                          Text('${entries[3].score}', style: const TextStyle(
                             fontFamily: 'BricolageGrotesque', fontWeight: FontWeight.w800,
                             fontSize: 26, color: KColors.gold,
                           )),

@@ -95,7 +95,7 @@ class KSongCard extends StatelessWidget {
                 child: Container(
                   width: 36,
                   height: 36,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: KColors.limeTint,
                     shape: BoxShape.circle,
                   ),
@@ -458,7 +458,7 @@ class KComboBadge extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.whatshot, color: KColors.gold, size: 34),
+        const Icon(Icons.whatshot, color: KColors.gold, size: 34),
         const SizedBox(width: 8),
         Text(
           'x$combo',

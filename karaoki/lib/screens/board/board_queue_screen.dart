@@ -14,7 +14,7 @@ class BoardQueueScreen extends StatelessWidget {
   final String elapsed;
   final String duration;
   final double progress;
-  final List<_QueueEntry> upNext;
+final List<QueueEntryBoard> upNext;
 
   const BoardQueueScreen({
     super.key,
@@ -222,13 +222,13 @@ class BoardQueueScreen extends StatelessWidget {
   }
 }
 
-class _QueueEntry {
+class QueueEntryBoard {
   final String title;
   final String artist;
   final String requester;
   final String requesterInitial;
 
-  const _QueueEntry({
+  const QueueEntryBoard({
     required this.title,
     required this.artist,
     required this.requester,

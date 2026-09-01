@@ -119,10 +119,10 @@ class BoardVsScreen extends StatelessWidget {
                     ),
 
                     // VS
-                    Column(
+                    const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           'VS',
                           style: TextStyle(
                             fontFamily: 'BricolageGrotesque', fontWeight: FontWeight.w800,

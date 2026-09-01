@@ -134,8 +134,8 @@ class _KaraokiRouterState extends State<KaraokiRouter> {
         );
 
       case _Screen.singing:
-        return SingingScreen(
-          key: const ValueKey('singing'),
+        return const SingingScreen(
+          key: ValueKey('singing'),
           previousLine: 'Dancing in the neon midnight glow',
           currentLine: 'We were never meant to last this long',
           nextLine: 'But here we are, just proving them wrong',
@@ -150,8 +150,8 @@ class _KaraokiRouterState extends State<KaraokiRouter> {
         );
 
       case _Screen.complete:
-        return CompleteScreen(
-          key: const ValueKey('complete'),
+        return const CompleteScreen(
+          key: ValueKey('complete'),
           score: 87,
           pitch: 92,
           timing: 88,
@@ -167,8 +167,8 @@ class _KaraokiRouterState extends State<KaraokiRouter> {
         );
 
       case _Screen.boardWait:
-        return BoardWaitScreen(
-          key: const ValueKey('boardWait'),
+        return const BoardWaitScreen(
+          key: ValueKey('boardWait'),
           roomName: 'Friday Night Fire',
           roomCode: 'KARA-7821',
           mode: 'CLASSIC',
@@ -177,8 +177,8 @@ class _KaraokiRouterState extends State<KaraokiRouter> {
         );
 
       case _Screen.boardPerf:
-        return BoardPerformanceScreen(
-          key: const ValueKey('boardPerf'),
+        return const BoardPerformanceScreen(
+          key: ValueKey('boardPerf'),
           songTitle: 'Neon Midnight',
           artist: 'Vela Cruz',
           singerName: 'Matt',
@@ -196,14 +196,14 @@ class _KaraokiRouterState extends State<KaraokiRouter> {
         );
 
       case _Screen.boardReveal:
-        return BoardRevealScreen(
-          key: const ValueKey('boardReveal'),
+        return const BoardRevealScreen(
+          key: ValueKey('boardReveal'),
           singerName: 'Matt',
           score: 96,
           rank: 'SUPERSTAR',
           songTitle: 'Neon Midnight',
           isNewRecord: true,
-          rankings: const [
+          rankings: [
             RankingEntry(name: 'Matt', initial: 'M', score: 96),
             RankingEntry(name: 'Sara', initial: 'S', score: 84),
             RankingEntry(name: 'Dawit', initial: 'D', score: 72),
@@ -219,8 +219,8 @@ class _KaraokiRouterState extends State<KaraokiRouter> {
         );
 
       case _Screen.boardQueue:
-        return BoardQueueScreen(
-          key: const ValueKey('boardQueue'),
+        return const BoardQueueScreen(
+          key: ValueKey('boardQueue'),
           currentTitle: 'Neon Midnight',
           currentArtist: 'Vela Cruz',
           singerName: 'Matt',
@@ -234,10 +234,10 @@ class _KaraokiRouterState extends State<KaraokiRouter> {
         );
 
       case _Screen.boardLeaderboard:
-        return BoardLeaderboardScreen(
-          key: const ValueKey('boardLeaderboard'),
+        return const BoardLeaderboardScreen(
+          key: ValueKey('boardLeaderboard'),
           roomName: 'Friday Night Fire',
-          entries: const [
+          entries: [
             BoardLeaderboardEntry(name: 'Matt', initial: 'M', score: 96),
             BoardLeaderboardEntry(name: 'Sara', initial: 'S', score: 84),
             BoardLeaderboardEntry(name: 'Dawit', initial: 'D', score: 72),
@@ -285,8 +285,8 @@ class _KaraokiRouterState extends State<KaraokiRouter> {
         return const WeakConnectionScreen(key: ValueKey('weakConnection'));
 
       case _Screen.playerDropped:
-        return PlayerDroppedScreen(
-          key: const ValueKey('playerDropped'),
+        return const PlayerDroppedScreen(
+          key: ValueKey('playerDropped'),
           playerName: 'Dawit',
         );
 

@@ -57,7 +57,7 @@ class HomeScreen extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                KLiveDot(color: KColors.mint, size: 6),
+                                const KLiveDot(color: KColors.mint, size: 6),
                                 const SizedBox(width: 6),
                                 Text(
                                   'SAT 21:04 / 4 ONLINE',
@@ -89,9 +89,9 @@ class HomeScreen extends StatelessWidget {
                     // Avatar
                     GestureDetector(
                       onTap: onProfile,
-                      child: Stack(
+                      child: const Stack(
                         children: [
-                          const KAvatar(initial: 'M', size: 50),
+                          KAvatar(initial: 'M', size: 50),
                           Positioned(
                             right: 0,
                             bottom: 0,
@@ -122,7 +122,7 @@ class HomeScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(KRadius.heroCard),
                       gradient: LinearGradient(
                         begin: Alignment.topRight,
-                        end: Alignment(0.2, 1),
+                        end: const Alignment(0.2, 1),
                         colors: [
                           KColors.limeTint.withOpacity(0.4),
                           KColors.ink700,
@@ -158,7 +158,7 @@ class HomeScreen extends StatelessWidget {
                             ),
                             child: Row(
                               children: [
-                                KLiveDot(color: KColors.mint, size: 6),
+                                const KLiveDot(color: KColors.mint, size: 6),
                                 const SizedBox(width: 6),
                                 Text(
                                   'ROOM LIVE NOW',
@@ -404,7 +404,7 @@ class HomeScreen extends StatelessWidget {
                           style: KTypography.monoLabel.copyWith(fontSize: 9),
                         ),
                         const SizedBox(width: 8),
-                        KLiveDot(color: KColors.red, size: 6),
+                        const KLiveDot(color: KColors.red, size: 6),
                       ],
                     ),
                     const SizedBox(height: 12),

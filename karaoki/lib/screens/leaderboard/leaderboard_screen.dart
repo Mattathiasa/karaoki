@@ -24,8 +24,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         child: Column(
           children: [
             // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
+            const Padding(
+              padding: EdgeInsets.fromLTRB(
                 KSpacing.mobilePaddingH,
                 KSpacing.mobilePaddingV,
                 KSpacing.mobilePaddingH,
@@ -33,9 +33,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               ),
               child: Row(
                 children: [
-                  const KIconButton(icon: Icons.arrow_back_ios_new, size: 34),
-                  const SizedBox(width: 12),
-                  const Expanded(
+                  KIconButton(icon: Icons.arrow_back_ios_new, size: 34),
+                  SizedBox(width: 12),
+                  Expanded(
                     child: Text(
                       'Leaderboard',
                       style: TextStyle(
@@ -87,8 +87,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             ),
 
             // Podium
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -101,7 +101,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     height: 74,
                     avatarSize: 52,
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   // 1st place
                   _PodiumColumn(
                     rank: 1,
@@ -111,7 +111,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     avatarSize: 64,
                     showCrown: true,
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   // 3rd place
                   _PodiumColumn(
                     rank: 3,

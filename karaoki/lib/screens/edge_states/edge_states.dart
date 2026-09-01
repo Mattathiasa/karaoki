@@ -211,7 +211,7 @@ class MicLostScreen extends StatelessWidget {
               color: KColors.red.withOpacity(0.2),
               child: Row(
                 children: [
-                  KLiveDot(color: KColors.red, size: 6),
+                  const KLiveDot(color: KColors.red, size: 6),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -327,7 +327,7 @@ class WeakConnectionScreen extends StatelessWidget {
               color: KColors.gold.withOpacity(0.2),
               child: Row(
                 children: [
-                  Icon(Icons.signal_wifi_off, color: KColors.gold, size: 16),
+                  const Icon(Icons.signal_wifi_off, color: KColors.gold, size: 16),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -355,12 +355,12 @@ class WeakConnectionScreen extends StatelessWidget {
               ),
             ),
             // Latency + score syncing
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
                   _WeakMetric(label: 'LATENCY', value: '840ms'),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   _WeakMetric(label: 'SCORE', value: 'syncing…'),
                 ],
               ),
@@ -423,7 +423,7 @@ class PlayerDroppedScreen extends StatelessWidget {
   final VoidCallback? onSkip;
   final VoidCallback? onWait;
 
-  PlayerDroppedScreen({
+  const PlayerDroppedScreen({
     super.key,
     required this.playerName,
     this.holdSeconds = 47,

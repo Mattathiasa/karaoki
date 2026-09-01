@@ -189,7 +189,7 @@ class _KEqualiserState extends State<KEqualiser>
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.animate ? _controller : AlwaysStoppedAnimation(0),
+      animation: widget.animate ? _controller : const AlwaysStoppedAnimation(0),
       builder: (context, child) {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
