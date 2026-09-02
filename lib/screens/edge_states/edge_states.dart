@@ -68,7 +68,7 @@ class EmptyQueueScreen extends StatelessWidget {
 class NoResultsScreen extends StatelessWidget {
   final String query;
   final VoidCallback? onTryGenre;
-  const NoResultsScreen({super.key, required this.query, this.onTryGenre});
+  const NoResultsScreen({super.key, this.query = '', this.onTryGenre});
 
   @override
   Widget build(BuildContext context) {
@@ -425,7 +425,7 @@ class PlayerDroppedScreen extends StatelessWidget {
 
   const PlayerDroppedScreen({
     super.key,
-    required this.playerName,
+    this.playerName = 'Player',
     this.holdSeconds = 47,
     this.onSkip,
     this.onWait,
@@ -540,7 +540,7 @@ class BadCodeScreen extends StatelessWidget {
 
   const BadCodeScreen({
     super.key,
-    required this.code,
+    this.code = 'KARA-0000',
     this.onAutofill,
     this.onTryAgain,
     this.onScan,
@@ -606,7 +606,7 @@ class BadCodeScreen extends StatelessWidget {
 class UnavailableSongScreen extends StatelessWidget {
   final String songTitle;
   final List<String> alternatives;
-  const UnavailableSongScreen({super.key, required this.songTitle, this.alternatives = const []});
+  const UnavailableSongScreen({super.key, this.songTitle = 'Song', this.alternatives = const []});
 
   @override
   Widget build(BuildContext context) {

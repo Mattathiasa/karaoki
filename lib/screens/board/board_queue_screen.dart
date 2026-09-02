@@ -18,9 +18,9 @@ final List<QueueEntryBoard> upNext;
 
   const BoardQueueScreen({
     super.key,
-    required this.currentTitle,
-    required this.currentArtist,
-    required this.singerName,
+    this.currentTitle = 'Neon Midnight',
+    this.currentArtist = 'Vela Cruz',
+    this.singerName = 'Matt',
     this.singerInitial = 'M',
     this.elapsed = '1:32',
     this.duration = '3:42',

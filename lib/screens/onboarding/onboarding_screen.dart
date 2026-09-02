@@ -3,9 +3,9 @@ import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  final VoidCallback onComplete;
+  final VoidCallback? onComplete;
 
-  const OnboardingScreen({super.key, required this.onComplete});
+  const OnboardingScreen({super.key, this.onComplete});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -45,7 +45,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               top: 16,
               right: 20,
               child: GestureDetector(
-                onTap: widget.onComplete,
+                onTap: () => widget.onComplete?.call(),
                 child: Text(
                   'Skip',
                   style: KTypography.uiButton.copyWith(
@@ -91,7 +91,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           curve: Curves.easeOut,
                         );
                       } else {
-                        widget.onComplete();
+                        widget.onComplete?.call();
                       }
                     },
                     child: Container(

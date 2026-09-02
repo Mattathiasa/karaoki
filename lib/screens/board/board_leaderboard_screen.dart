@@ -14,7 +14,7 @@ class BoardLeaderboardScreen extends StatelessWidget {
 
   const BoardLeaderboardScreen({
     super.key,
-    required this.roomName,
+    this.roomName = 'Friday Night Fire',
     this.performances = 6,
     this.mode = 'CLASSIC',
     this.entries = const [],

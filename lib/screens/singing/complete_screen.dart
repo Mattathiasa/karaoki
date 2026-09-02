@@ -17,7 +17,7 @@ class CompleteScreen extends StatelessWidget {
 
   const CompleteScreen({
     super.key,
-    required this.score,
+    this.score = 87,
     this.pitch = 92,
     this.timing = 88,
     this.consistency = 81,

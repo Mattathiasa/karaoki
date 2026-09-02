@@ -26,12 +26,12 @@ class BoardPerformanceScreen extends StatelessWidget {
 
   const BoardPerformanceScreen({
     super.key,
-    required this.songTitle,
-    required this.artist,
-    required this.singerName,
+    this.songTitle = 'Neon Midnight',
+    this.artist = 'Vela Cruz',
+    this.singerName = 'Matt',
     this.singerInitial = 'M',
     this.previousLine,
-    required this.currentLine,
+    this.currentLine = '...',
     this.nextLine,
     this.lineProgress = 0.0,
     this.progress = 0.0,

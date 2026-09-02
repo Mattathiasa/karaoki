@@ -20,15 +20,15 @@ class BoardRevealScreen extends StatelessWidget {
 
   const BoardRevealScreen({
     super.key,
-    required this.singerName,
+    this.singerName = 'Matt',
     this.singerInitial = 'M',
-    required this.score,
+    this.score = 87,
     this.pitch = 92,
     this.timing = 88,
     this.consistency = 81,
     this.energy = 95,
     this.rank = 'SUPERSTAR',
-    required this.songTitle,
+    this.songTitle = 'Neon Midnight',
     this.isNewRecord = false,
     this.rankings = const [],
   });

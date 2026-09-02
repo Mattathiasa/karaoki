@@ -3,6 +3,7 @@ import 'dart:math';
 import '../models/song.dart';
 
 /// Performance service: manages the song clock and score computation
+/// Now supports both simulated and real pitch/timing data
 class PerformanceService {
   Timer? _timer;
   final _controller = StreamController<PerformanceState>.broadcast();
@@ -10,11 +11,15 @@ class PerformanceService {
   Stream<PerformanceState> get stream => _controller.stream;
 
   PerformanceState? _currentState;
+  bool _useRealMic = false;
 
+  /// Start a performance with simulated data (default)
   void startPerformance({
     required Song song,
     required String singerId,
+    bool useRealMic = false,
   }) {
+    _useRealMic = useRealMic;
     _currentState = PerformanceState(
       song: song,
       singerId: singerId,
@@ -27,15 +32,31 @@ class PerformanceService {
     );
 
     _timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
-      if (_currentState == null) return;
-      final elapsed = DateTime.now().difference(_currentState!.startedAt);
-      if (elapsed >= song.duration) {
-        _endPerformance();
-        return;
-      }
+      _tick();
+    });
+  }
 
+  /// Push real mic data from the audio capture service
+  void pushMicData({required double pitchHz, required double amplitude}) {
+    if (_currentState == null || _useRealMic == false) return;
+    // Convert real Hz to 0-100 pitch score (target ~440Hz = A4)
+    final pitchScore = (100 - (pitchHz - 440).abs().clamp(0, 200) / 2).round().clamp(0, 100);
+    final amplitudeScore = (amplitude * 100).round().clamp(0, 100);
+    _applyScores(pitchScore: pitchScore, amplitudeScore: amplitudeScore);
+  }
+
+  void _tick() {
+    if (_currentState == null) return;
+    final elapsed = DateTime.now().difference(_currentState!.startedAt);
+    if (elapsed >= _currentState!.song.duration) {
+      _endPerformance();
+      return;
+    }
+
+    final progress = elapsed.inMilliseconds / _currentState!.song.duration.inMilliseconds;
+
+    if (!_useRealMic) {
       // Simulate pitch and timing data
-      final progress = elapsed.inMilliseconds / song.duration.inMilliseconds;
       final pitch = (85 + 15 * sin(progress * 6.28)).round();
       final timing = (80 + 20 * cos(progress * 4.2)).round();
       final combo = progress > 0.1 ? (progress * 20).round() : 0;
@@ -48,17 +69,34 @@ class PerformanceService {
         combo: combo,
         score: score,
       );
+    } else {
+      // Just update elapsed for real mic mode
+      _currentState = _currentState!.copyWith(elapsed: elapsed);
+    }
 
-      _controller.add(_currentState!);
-    });
+    _controller.add(_currentState!);
+  }
+
+  void _applyScores({required int pitchScore, required int amplitudeScore}) {
+    if (_currentState == null) return;
+    final prevCombo = _currentState!.combo;
+    final combo = (pitchScore > 70 && amplitudeScore > 40) ? prevCombo + 1 : (prevCombo > 0 ? prevCombo - 1 : 0);
+    final timing = amplitudeScore;
+    final score = ((pitchScore * 0.4) + (timing * 0.3) + (75 * 0.15) + (88 * 0.15)).round();
+
+    _currentState = _currentState!.copyWith(
+      pitch: pitchScore,
+      timing: timing,
+      combo: combo,
+      score: score,
+    );
+    _controller.add(_currentState!);
   }
 
   void _endPerformance() {
     _timer?.cancel();
     if (_currentState != null) {
-      _controller.add(_currentState!.copyWith(
-        isComplete: true,
-      ));
+      _controller.add(_currentState!.copyWith(isComplete: true));
     }
   }
 
@@ -102,7 +140,6 @@ class PerformanceState {
 
   Duration get remaining => song.duration - elapsed;
 
-  /// Current lyric line index based on progress
   int get currentLineIndex {
     if (song.lyrics.isEmpty) return -1;
     final progressPercent = progress * 100;
@@ -112,7 +149,6 @@ class PerformanceState {
     return 0;
   }
 
-  /// Progress within the current lyric line (0.0 to 1.0)
   double get lineProgress {
     if (song.lyrics.isEmpty || currentLineIndex < 0) return 0.0;
     final current = song.lyrics[currentLineIndex];

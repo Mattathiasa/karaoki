@@ -15,8 +15,8 @@ final List<BoardPlayer> players;
 
   const BoardWaitScreen({
     super.key,
-    required this.roomName,
-    required this.roomCode,
+    this.roomName = 'Friday Night Fire',
+    this.roomCode = 'KARA-7821',
     this.mode = 'CLASSIC',
     this.playerCount = 4,
     this.maxPlayers = 8,

@@ -5,9 +5,9 @@ import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
 
 class WelcomeScreen extends StatelessWidget {
-  final VoidCallback onContinue;
+  final VoidCallback? onContinue;
 
-  const WelcomeScreen({super.key, required this.onContinue});
+  const WelcomeScreen({super.key, this.onContinue});
 
   @override
   Widget build(BuildContext context) {

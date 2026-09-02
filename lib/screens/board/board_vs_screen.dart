@@ -31,7 +31,7 @@ class BoardVsScreen extends StatelessWidget {
     this.playerBScore = 82,
     this.playerBPitch = 85,
     this.playerBCombo = 9,
-    required this.songTitle,
+    this.songTitle = 'Neon Midnight',
     this.teamFireScore = 184,
     this.teamLightningScore = 167,
   });

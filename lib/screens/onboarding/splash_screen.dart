@@ -5,9 +5,9 @@ import '../../theme/typography.dart';
 import '../../widgets/ui_components.dart';
 
 class SplashScreen extends StatefulWidget {
-  final VoidCallback onComplete;
+  final VoidCallback? onComplete;
 
-  const SplashScreen({super.key, required this.onComplete});
+  const SplashScreen({super.key, this.onComplete});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -29,7 +29,7 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     )..repeat();
-    Timer(const Duration(milliseconds: 1200), widget.onComplete);
+    Timer(const Duration(milliseconds: 1200), () => widget.onComplete?.call());
   }
 
   @override

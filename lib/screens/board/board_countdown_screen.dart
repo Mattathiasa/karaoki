@@ -9,8 +9,8 @@ class BoardCountdownScreen extends StatefulWidget {
 
   const BoardCountdownScreen({
     super.key,
-    required this.singerName,
-    required this.songTitle,
+    this.singerName = 'Matt',
+    this.songTitle = 'Neon Midnight',
     this.onComplete,
   });
 

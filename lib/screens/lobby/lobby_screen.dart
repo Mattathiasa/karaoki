@@ -19,9 +19,9 @@ class LobbyScreen extends StatelessWidget {
 
   const LobbyScreen({
     super.key,
-    required this.roomName,
-    required this.roomCode,
-    required this.hostName,
+    this.roomName = 'Friday Night Fire',
+    this.roomCode = 'KARA-7821',
+    this.hostName = 'Host',
     this.mode = 'CLASSIC',
     this.playerCount = 4,
     this.maxPlayers = 8,
