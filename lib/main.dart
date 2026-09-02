@@ -311,7 +311,10 @@ class KaraokiApp extends StatelessWidget {
           create: (_) => KaraokePlaybackService(),
           dispose: (_, svc) => svc.dispose(),
         ),
-        Provider<MicService>(create: (_) => MicService()),
+        Provider<MicInputService>(
+          create: (_) => MicInputService(),
+          dispose: (_, svc) => svc.dispose(),
+        ),
         Provider<RealtimeSyncService>(
           create: (_) => _isFirebaseConfigured
               ? FirebaseRealtimeSyncService()

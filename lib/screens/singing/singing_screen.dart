@@ -9,6 +9,7 @@ import '../../widgets/lyrics.dart';
 import '../../widgets/ui_components.dart';
 import '../../services/performance_service.dart';
 import '../../services/karaoke_playback_service.dart';
+import '../../services/mic_service.dart';
 import '../../models/song.dart';
 
 class SingingScreen extends StatefulWidget {
@@ -21,10 +22,15 @@ class SingingScreen extends StatefulWidget {
   State<SingingScreen> createState() => _SingingScreenState();
 }
 
-class _SingingScreenState extends State<SingingScreen> {
+class _SingingScreenState extends State<SingingScreen>
+    with SingleTickerProviderStateMixin {
   PerformanceState? _state;
   Stream<KaraokeState>? _karaokeStream;
   KaraokePlaybackService? _karaoke;
+  MicInputService? _mic;
+  MicData? _micData;
+  bool _micPermissionGranted = false;
+  bool _micInitialized = false;
 
   @override
   void initState() {
@@ -45,16 +51,45 @@ class _SingingScreenState extends State<SingingScreen> {
     super.didChangeDependencies();
     if (_karaokeStream == null) {
       _karaoke = Provider.of<KaraokePlaybackService>(context, listen: false);
+      _mic = Provider.of<MicInputService>(context, listen: false);
       // Load fixture song and start simulated playback
       _karaoke!.loadSong(fixtureSongs.first);
       _karaoke!.playSimulated();
       _karaokeStream = _karaoke!.stateStream;
+
+      // Initialize mic
+      _initMic();
     }
+  }
+
+  Future<void> _initMic() async {
+    await _mic!.init();
+    final started = await _mic!.startCapture();
+    if (mounted) {
+      setState(() {
+        _micPermissionGranted = started;
+        _micInitialized = true;
+      });
+    }
+
+    // Connect mic to karaoke service for scoring
+    if (started) {
+      _karaoke!.connectMic(_mic!);
+    }
+
+    // Listen to mic data for waveform display
+    _mic!.dataStream.listen((data) {
+      if (mounted) {
+        setState(() => _micData = data);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _karaoke?.disconnectMic();
     _karaoke?.stop();
+    _mic?.stopCapture();
     super.dispose();
   }
 
@@ -89,26 +124,89 @@ class _SingingScreenState extends State<SingingScreen> {
     final elapsed = ks.positionLabel;
     final duration = ks.durationLabel;
 
+    // Mic note display
+    final micNote = _micData?.note ?? '--';
+    final micAmplitude = _micData?.amplitude ?? 0.0;
+    final isMicActive = _micPermissionGranted && _micData != null;
+
     return Scaffold(
       backgroundColor: KColors.ink800,
       body: SafeArea(
         child: Column(
           children: [
-            // Top: singing status bar
+            // Top: singing status bar + mic indicator
             Padding(
-              padding: const EdgeInsets.fromLTRB(KSpacing.mobilePaddingH, KSpacing.mobilePaddingV, KSpacing.mobilePaddingH, 0),
+              padding: const EdgeInsets.fromLTRB(
+                KSpacing.mobilePaddingH,
+                KSpacing.mobilePaddingV,
+                KSpacing.mobilePaddingH,
+                0,
+              ),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(color: KColors.red.withOpacity(0.2), borderRadius: BorderRadius.circular(KRadius.pill)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: KColors.red.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(KRadius.pill),
+                    ),
                     child: Row(children: [
                       const KLiveDot(color: KColors.red, size: 6),
                       const SizedBox(width: 6),
-                      Text('YOU ARE SINGING', style: KTypography.monoLabel.copyWith(fontSize: 9, color: KColors.red, fontWeight: FontWeight.w700)),
+                      Text(
+                        'YOU ARE SINGING',
+                        style: KTypography.monoLabel.copyWith(
+                          fontSize: 9,
+                          color: KColors.red,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ]),
                   ),
                   const Spacer(),
+                  // Mic status pill
+                  if (_micInitialized)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isMicActive
+                            ? KColors.lime.withOpacity(0.15)
+                            : KColors.gold.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(KRadius.pill),
+                        border: Border.all(
+                          color: isMicActive
+                              ? KColors.lime.withOpacity(0.3)
+                              : KColors.gold.withOpacity(0.3),
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isMicActive ? Icons.mic : Icons.mic_off,
+                            size: 12,
+                            color: isMicActive ? KColors.lime : KColors.gold,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isMicActive ? micNote : 'NO MIC',
+                            style: KTypography.monoLabel.copyWith(
+                              fontSize: 9,
+                              color: isMicActive ? KColors.lime : KColors.gold,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(width: 8),
                   const KIconButton(icon: Icons.pause, size: 34),
                 ],
               ),
@@ -116,20 +214,30 @@ class _SingingScreenState extends State<SingingScreen> {
 
             // Progress bar
             Padding(
-              padding: const EdgeInsets.fromLTRB(KSpacing.mobilePaddingH, 12, KSpacing.mobilePaddingH, 0),
+              padding: const EdgeInsets.fromLTRB(
+                KSpacing.mobilePaddingH,
+                12,
+                KSpacing.mobilePaddingH,
+                0,
+              ),
               child: Row(children: [
-                Text(elapsed, style: KTypography.monoLabel.copyWith(fontSize: 10, color: KColors.bone45)),
+                Text(elapsed,
+                    style: KTypography.monoLabel.copyWith(
+                        fontSize: 10, color: KColors.bone45)),
                 const SizedBox(width: 10),
                 Expanded(child: KProgressBar(progress: progress, height: 5)),
                 const SizedBox(width: 10),
-                Text(duration, style: KTypography.monoLabel.copyWith(fontSize: 10, color: KColors.bone45)),
+                Text(duration,
+                    style: KTypography.monoLabel.copyWith(
+                        fontSize: 10, color: KColors.bone45)),
               ]),
             ),
 
             // Lyrics (dominant centre)
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: KSpacing.massive),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: KSpacing.massive),
                 child: KLyricWidget(
                   previousLine: previousLine,
                   currentLine: currentLine,
@@ -139,35 +247,84 @@ class _SingingScreenState extends State<SingingScreen> {
               ),
             ),
 
-            // Input equaliser
-            const SizedBox(height: 52, child: KEqualiser(height: 52, barCount: 18)),
+            // Live waveform visualizer (from real mic)
+            if (isMicActive)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KSpacing.mobilePaddingH,
+                ),
+                child: SizedBox(
+                  height: 48,
+                  child: _MicWaveform(amplitude: micAmplitude),
+                ),
+              )
+            else
+              const SizedBox(
+                height: 48,
+                child: KEqualiser(height: 48, barCount: 18),
+              ),
 
             // Metrics
             Padding(
-              padding: const EdgeInsets.fromLTRB(KSpacing.mobilePaddingH, 12, KSpacing.mobilePaddingH, 0),
+              padding: const EdgeInsets.fromLTRB(
+                KSpacing.mobilePaddingH,
+                12,
+                KSpacing.mobilePaddingH,
+                0,
+              ),
               child: Row(children: [
-                _MetricCard(label: 'PITCH', value: '$pitch%', color: KColors.mint),
+                _MetricCard(
+                  label: 'PITCH',
+                  value: '$pitch%',
+                  color: KColors.mint,
+                  sub: isMicActive ? micNote : null,
+                ),
                 const SizedBox(width: 8),
-                _MetricCard(label: 'TIMING', value: '$timing%', color: KColors.gold),
+                _MetricCard(
+                  label: 'TIMING',
+                  value: '$timing%',
+                  color: KColors.gold,
+                ),
                 const SizedBox(width: 8),
-                _MetricCard(label: 'COMBO', value: 'x$combo', color: KColors.lime),
+                _MetricCard(
+                  label: 'COMBO',
+                  value: 'x$combo',
+                  color: KColors.lime,
+                ),
               ]),
             ),
 
             // Live score
             Padding(
-              padding: const EdgeInsets.fromLTRB(KSpacing.mobilePaddingH, 10, KSpacing.mobilePaddingH, 12),
+              padding: const EdgeInsets.fromLTRB(
+                KSpacing.mobilePaddingH,
+                10,
+                KSpacing.mobilePaddingH,
+                12,
+              ),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: KColors.limeTint.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(KRadius.tile),
-                  border: Border.all(color: KColors.limeTint.withOpacity(0.3), width: 0.5),
+                  border: Border.all(
+                    color: KColors.limeTint.withOpacity(0.3),
+                    width: 0.5,
+                  ),
                 ),
-                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Text('LIVE SCORE', style: KTypography.monoLabel.copyWith(fontSize: 9, color: KColors.bone45)),
-                  Text('$score', style: KTypography.displayHeadline2.copyWith(fontSize: 26, color: KColors.lime)),
-                ]),
+                child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('LIVE SCORE',
+                          style: KTypography.monoLabel.copyWith(
+                              fontSize: 9, color: KColors.bone45)),
+                      Text('$score',
+                          style: KTypography.displayHeadline2
+                              .copyWith(fontSize: 26, color: KColors.lime)),
+                    ]),
               ),
             ),
 
@@ -176,7 +333,14 @@ class _SingingScreenState extends State<SingingScreen> {
               padding: const EdgeInsets.only(bottom: 20),
               child: GestureDetector(
                 onTap: widget.onComplete,
-                child: Text('End performance \u2192', style: KTypography.uiButton.copyWith(color: KColors.bone55, fontWeight: FontWeight.w400, fontSize: 13)),
+                child: Text(
+                  'End performance \u2192',
+                  style: KTypography.uiButton.copyWith(
+                    color: KColors.bone55,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 13,
+                  ),
+                ),
               ),
             ),
           ],
@@ -185,12 +349,15 @@ class _SingingScreenState extends State<SingingScreen> {
     );
   }
 
-  /// Fallback to legacy PerformanceService data
+  /// Fallback to legacy PerformanceService data.
   Widget _buildFallback() {
     final state = _state;
-    final previousLine = state?.previousLine ?? 'Dancing in the neon midnight glow';
-    final currentLine = state?.currentLine ?? 'We were never meant to last this long';
-    final nextLine = state?.nextLine ?? 'But here we are, just proving them wrong';
+    final previousLine =
+        state?.previousLine ?? 'Dancing in the neon midnight glow';
+    final currentLine =
+        state?.currentLine ?? 'We were never meant to last this long';
+    final nextLine =
+        state?.nextLine ?? 'But here we are, just proving them wrong';
     final lineProgress = state?.lineProgress ?? 0.65;
     final progress = state?.progress ?? 0.42;
     final pitch = state?.pitch ?? 88;
@@ -206,16 +373,29 @@ class _SingingScreenState extends State<SingingScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(KSpacing.mobilePaddingH, KSpacing.mobilePaddingV, KSpacing.mobilePaddingH, 0),
+              padding: const EdgeInsets.fromLTRB(
+                KSpacing.mobilePaddingH,
+                KSpacing.mobilePaddingV,
+                KSpacing.mobilePaddingH,
+                0,
+              ),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(color: KColors.red.withOpacity(0.2), borderRadius: BorderRadius.circular(KRadius.pill)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: KColors.red.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(KRadius.pill),
+                    ),
                     child: Row(children: [
                       const KLiveDot(color: KColors.red, size: 6),
                       const SizedBox(width: 6),
-                      Text('YOU ARE SINGING', style: KTypography.monoLabel.copyWith(fontSize: 9, color: KColors.red, fontWeight: FontWeight.w700)),
+                      Text('YOU ARE SINGING',
+                          style: KTypography.monoLabel.copyWith(
+                              fontSize: 9,
+                              color: KColors.red,
+                              fontWeight: FontWeight.w700)),
                     ]),
                   ),
                   const Spacer(),
@@ -224,18 +404,24 @@ class _SingingScreenState extends State<SingingScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(KSpacing.mobilePaddingH, 12, KSpacing.mobilePaddingH, 0),
+              padding: const EdgeInsets.fromLTRB(
+                  KSpacing.mobilePaddingH, 12, KSpacing.mobilePaddingH, 0),
               child: Row(children: [
-                Text(elapsed, style: KTypography.monoLabel.copyWith(fontSize: 10, color: KColors.bone45)),
+                Text(elapsed,
+                    style: KTypography.monoLabel
+                        .copyWith(fontSize: 10, color: KColors.bone45)),
                 const SizedBox(width: 10),
                 Expanded(child: KProgressBar(progress: progress, height: 5)),
                 const SizedBox(width: 10),
-                Text(duration, style: KTypography.monoLabel.copyWith(fontSize: 10, color: KColors.bone45)),
+                Text(duration,
+                    style: KTypography.monoLabel
+                        .copyWith(fontSize: 10, color: KColors.bone45)),
               ]),
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: KSpacing.massive),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: KSpacing.massive),
                 child: KLyricWidget(
                   previousLine: previousLine,
                   currentLine: currentLine,
@@ -246,35 +432,52 @@ class _SingingScreenState extends State<SingingScreen> {
             ),
             const SizedBox(height: 52, child: KEqualiser(height: 52, barCount: 18)),
             Padding(
-              padding: const EdgeInsets.fromLTRB(KSpacing.mobilePaddingH, 12, KSpacing.mobilePaddingH, 0),
+              padding: const EdgeInsets.fromLTRB(
+                  KSpacing.mobilePaddingH, 12, KSpacing.mobilePaddingH, 0),
               child: Row(children: [
-                _MetricCard(label: 'PITCH', value: '$pitch%', color: KColors.mint),
+                _MetricCard(
+                    label: 'PITCH', value: '$pitch%', color: KColors.mint),
                 const SizedBox(width: 8),
-                _MetricCard(label: 'TIMING', value: '$timing%', color: KColors.gold),
+                _MetricCard(
+                    label: 'TIMING', value: '$timing%', color: KColors.gold),
                 const SizedBox(width: 8),
-                _MetricCard(label: 'COMBO', value: 'x$combo', color: KColors.lime),
+                _MetricCard(
+                    label: 'COMBO', value: 'x$combo', color: KColors.lime),
               ]),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(KSpacing.mobilePaddingH, 10, KSpacing.mobilePaddingH, 12),
+              padding: const EdgeInsets.fromLTRB(
+                  KSpacing.mobilePaddingH, 10, KSpacing.mobilePaddingH, 12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: KColors.limeTint.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(KRadius.tile),
-                  border: Border.all(color: KColors.limeTint.withOpacity(0.3), width: 0.5),
+                  border: Border.all(
+                      color: KColors.limeTint.withOpacity(0.3), width: 0.5),
                 ),
-                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Text('LIVE SCORE', style: KTypography.monoLabel.copyWith(fontSize: 9, color: KColors.bone45)),
-                  Text('$score', style: KTypography.displayHeadline2.copyWith(fontSize: 26, color: KColors.lime)),
-                ]),
+                child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('LIVE SCORE',
+                          style: KTypography.monoLabel
+                              .copyWith(fontSize: 9, color: KColors.bone45)),
+                      Text('$score',
+                          style: KTypography.displayHeadline2
+                              .copyWith(fontSize: 26, color: KColors.lime)),
+                    ]),
               ),
             ),
             Padding(
               padding: const EdgeInsets.only(bottom: 20),
               child: GestureDetector(
                 onTap: widget.onComplete,
-                child: Text('End performance \u2192', style: KTypography.uiButton.copyWith(color: KColors.bone55, fontWeight: FontWeight.w400, fontSize: 13)),
+                child: Text('End performance \u2192',
+                    style: KTypography.uiButton.copyWith(
+                        color: KColors.bone55,
+                        fontWeight: FontWeight.w400,
+                        fontSize: 13)),
               ),
             ),
           ],
@@ -288,7 +491,14 @@ class _MetricCard extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  const _MetricCard({required this.label, required this.value, required this.color});
+  final String? sub;
+
+  const _MetricCard({
+    required this.label,
+    required this.value,
+    required this.color,
+    this.sub,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -301,11 +511,62 @@ class _MetricCard extends StatelessWidget {
           border: Border.all(color: color.withOpacity(0.2), width: 0.5),
         ),
         child: Column(children: [
-          Text(label, style: KTypography.monoLabel.copyWith(fontSize: 9, color: color)),
+          Text(label,
+              style: KTypography.monoLabel.copyWith(fontSize: 9, color: color)),
           const SizedBox(height: 4),
-          Text(value, style: KTypography.displayHeadline2.copyWith(fontSize: 16, color: color)),
+          Text(value,
+              style: KTypography.displayHeadline2
+                  .copyWith(fontSize: 16, color: color)),
+          if (sub != null) ...[
+            const SizedBox(height: 2),
+            Text(sub!,
+                style: KTypography.monoLabel
+                    .copyWith(fontSize: 8, color: color.withOpacity(0.6))),
+          ],
         ]),
       ),
+    );
+  }
+}
+
+/// Live waveform visualizer driven by mic amplitude.
+class _MicWaveform extends StatelessWidget {
+  final double amplitude;
+
+  const _MicWaveform({required this.amplitude});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final barCount = (constraints.maxWidth / 4).floor().clamp(10, 80);
+        final barWidth = constraints.maxWidth / barCount;
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: List.generate(barCount, (i) {
+            // Create a wave pattern from the amplitude
+            final centerDist = (i - barCount / 2).abs() / (barCount / 2);
+            final heightFactor =
+                (1.0 - centerDist * 0.6) * amplitude;
+            final barHeight =
+                (heightFactor * constraints.maxHeight).clamp(2.0, constraints.maxHeight);
+
+            // Color based on amplitude: lime when loud, bone when quiet
+            final color = amplitude > 0.5 ? KColors.lime : KColors.bone45;
+
+            return Container(
+              width: barWidth - 1,
+              height: barHeight,
+              margin: const EdgeInsets.symmetric(horizontal: 0.5),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(1),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:just_audio/just_audio.dart';
 import '../models/song.dart';
 import 'lrc_parser.dart';
+import 'mic_service.dart';
 
 /// State of the current karaoke playback.
 class KaraokeState {
@@ -98,12 +99,17 @@ class KaraokePlaybackService {
   Song _song = fixtureSongs.first;
   List<LyricLine> _lyrics = [];
 
-  // Simulated scoring state
+  // Scoring state
   int _simScore = 0;
   int _simPitch = 0;
   int _simTiming = 0;
   int _simCombo = 0;
   int _simLineIndex = -1;
+
+  // Real mic integration
+  StreamSubscription<MicData>? _micSubscription;
+  final List<double> _recentAmplitudes = [];
+  final double _currentTargetHz = 440; // Current target note for pitch scoring
 
   final _stateController = StreamController<KaraokeState>.broadcast();
   Stream<KaraokeState> get stateStream => _stateController.stream;
@@ -135,6 +141,61 @@ class KaraokePlaybackService {
   /// Load lyrics from an LRC string.
   void loadLrc(String lrcContent) {
     _lyrics = LrcParser.parse(lrcContent, totalDuration: _song.duration);
+  }
+
+  // ─── Microphone Integration ─────────────────────────
+
+  /// Connect a MicInputService for real-time pitch scoring.
+  /// When connected, pitch/timing/combo scores come from real mic data
+  /// instead of simulated values.
+  void connectMic(MicInputService micService) {
+    _micSubscription?.cancel();
+    _micSubscription = micService.dataStream.listen(_onMicData);
+  }
+
+  /// Disconnect the microphone.
+  void disconnectMic() {
+    _micSubscription?.cancel();
+    _micSubscription = null;
+
+  }
+
+  /// Process real mic data for scoring.
+  void _onMicData(MicData data) {
+    if (!_current.isPlaying) return;
+
+    // Track recent amplitudes for timing scoring
+    _recentAmplitudes.add(data.amplitude);
+    if (_recentAmplitudes.length > 20) {
+      _recentAmplitudes.removeAt(0);
+    }
+
+    // Score pitch against the current target note
+    // (In production, target notes would come from the song's note track)
+    final pitchScore = PitchDetector.scorePitch(data.hz, _currentTargetHz);
+
+    // Score timing based on amplitude consistency
+    final timingScore = PitchDetector.scoreTiming(
+      _recentAmplitudes,
+      targetAmplitude: 0.5,
+    );
+
+    // Update combo on line changes (handled in _updateLyricState)
+    // But accumulate score from real mic
+    if (pitchScore > 60) {
+      _simScore += (pitchScore * 0.5).round();
+    }
+
+    _simPitch = pitchScore;
+    _simTiming = timingScore;
+
+    // Emit updated state with real scores
+    _current = _current.copyWith(
+      score: _simScore,
+      pitch: _simPitch,
+      timing: _simTiming,
+    );
+    _stateController.add(_current);
   }
 
   // ─── Real Audio Playback ──────────────────────────────
@@ -264,6 +325,7 @@ class KaraokePlaybackService {
 
   Future<void> stop() async {
     _simTimer?.cancel();
+    disconnectMic();
     try {
       await _player.stop();
     } catch (_) {}
@@ -410,6 +472,7 @@ class KaraokePlaybackService {
 
   void dispose() {
     _simTimer?.cancel();
+    _micSubscription?.cancel();
     _player.dispose();
     _stateController.close();
   }
