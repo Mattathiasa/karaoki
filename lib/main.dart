@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
+import 'firebase_options.dart';
 import 'theme/colors.dart';
 import 'providers/app_state.dart';
 import 'services/room_service.dart';
@@ -9,6 +12,8 @@ import 'services/performance_service.dart';
 import 'services/audio_service.dart';
 import 'services/mic_service.dart';
 import 'services/realtime_sync_service.dart';
+import 'services/firebase_room_service.dart';
+import 'services/firebase_sync_service.dart';
 
 // Onboarding
 import 'screens/onboarding/splash_screen.dart';
@@ -61,7 +66,33 @@ import 'screens/edge_states/edge_states.dart';
 import 'widgets/board_shell.dart';
 import 'widgets/app_shell.dart';
 
-void main() {
+/// Whether Firebase is properly configured with real credentials.
+bool _isFirebaseConfigured = false;
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // Check if Firebase is actually configured (not placeholder values)
+    final db = FirebaseDatabase.instance;
+    _isFirebaseConfigured = !(db.databaseURL ?? '').contains('YOUR_PROJECT_ID');
+
+    if (_isFirebaseConfigured) {
+      // Use persistent connection for real-time sync
+      db.setPersistenceEnabled(true);
+      db.setPersistenceCacheSizeBytes(10 * 1024 * 1024); // 10MB
+    }
+  } catch (e) {
+    // Firebase not configured, fall back to stubs
+    debugPrint('Firebase init failed: $e - using stub services');
+    _isFirebaseConfigured = false;
+  }
+
   runApp(const KaraokiApp());
 }
 
@@ -267,11 +298,20 @@ class KaraokiApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AppState()),
-        Provider<RoomService>(create: (_) => StubRoomService()),
+        // Use Firebase services if configured, otherwise stubs
+        Provider<RoomService>(
+          create: (_) => _isFirebaseConfigured
+              ? FirebaseRoomService()
+              : StubRoomService(),
+        ),
         Provider<PerformanceService>(create: (_) => PerformanceService()),
         Provider<AudioPlaybackService>(create: (_) => AudioPlaybackService()),
         Provider<MicService>(create: (_) => MicService()),
-        Provider<RealtimeSyncService>(create: (_) => StubRealtimeSyncService()),
+        Provider<RealtimeSyncService>(
+          create: (_) => _isFirebaseConfigured
+              ? FirebaseRealtimeSyncService()
+              : StubRealtimeSyncService(),
+        ),
       ],
       child: MaterialApp.router(
         title: 'Zemaoki',
