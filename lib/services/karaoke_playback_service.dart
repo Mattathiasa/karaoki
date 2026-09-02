@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:just_audio/just_audio.dart';
 import '../models/song.dart';
+import '../models/note_track.dart';
 import 'lrc_parser.dart';
 import 'mic_service.dart';
 
@@ -109,7 +110,7 @@ class KaraokePlaybackService {
   // Real mic integration
   StreamSubscription<MicData>? _micSubscription;
   final List<double> _recentAmplitudes = [];
-  final double _currentTargetHz = 440; // Current target note for pitch scoring
+  NoteTrack? _noteTrack; // Target melody notes for pitch scoring
 
   final _stateController = StreamController<KaraokeState>.broadcast();
   Stream<KaraokeState> get stateStream => _stateController.stream;
@@ -129,6 +130,7 @@ class KaraokePlaybackService {
     _lyrics = song.lyrics.isNotEmpty
         ? song.lyrics
         : _generatePlaceholderLyrics(song);
+    _noteTrack = song.noteTrack;
     _simScore = 0;
     _simPitch = 0;
     _simTiming = 0;
@@ -170,9 +172,9 @@ class KaraokePlaybackService {
       _recentAmplitudes.removeAt(0);
     }
 
-    // Score pitch against the current target note
-    // (In production, target notes would come from the song's note track)
-    final pitchScore = PitchDetector.scorePitch(data.hz, _currentTargetHz);
+    // Score pitch against the target note from the song's melody
+    final targetHz = _noteTrack?.hzAt(_current.overallProgress.round() * 100) ?? 440;
+    final pitchScore = PitchDetector.scorePitch(data.hz, targetHz);
 
     // Score timing based on amplitude consistency
     final timingScore = PitchDetector.scoreTiming(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +13,7 @@ import 'services/performance_service.dart';
 import 'services/audio_service.dart';
 import 'services/karaoke_playback_service.dart';
 import 'services/mic_service.dart';
+import 'services/tv_audio_service.dart';
 import 'services/realtime_sync_service.dart';
 import 'services/firebase_room_service.dart';
 import 'services/firebase_sync_service.dart';
@@ -101,8 +103,43 @@ void main() async {
 final _shellKey = GlobalKey<NavigatorState>();
 
 // ─── Go Router Configuration ───────────────────────
+/// Detect if the user agent indicates a TV/kiosk device.
+bool _isTvDevice() {
+  if (!kIsWeb) return false;
+  // Check user agent for TV/kiosk indicators
+  try {
+    final ua = Uri.base.queryParameters['ua'] ?? '';
+    return ua.contains('tv') || ua.contains('kiosk') || ua.contains('smart-tv');
+  } catch (e) {
+    return false;
+  }
+}
+
 final _router = GoRouter(
   initialLocation: '/',
+  // Redirect based on URL parameters for TV vs Phone mode
+  redirect: (context, state) {
+    final uri = state.uri;
+    final roomCode = uri.queryParameters['code'];
+
+    // /tv?code=KARA-1234 -> TV board mode with room code
+    if (uri.path == '/tv' && roomCode != null) {
+      // Store the room code for the board screens to use
+      return '/tv';
+    }
+
+    // /join?code=KARA-1234 -> Phone join mode with room code
+    if (uri.path == '/join' && roomCode != null) {
+      return '/join-room';
+    }
+
+    // Auto-detect TV mode from user agent or URL param
+    if (uri.path == '/' && _isTvDevice()) {
+      return '/tv';
+    }
+
+    return null; // No redirect
+  },
   routes: [
     // ── Onboarding (no bottom nav) ──
     GoRoute(
@@ -261,7 +298,18 @@ final _router = GoRouter(
     ),
 
     // ── Board / TV Routes (full-screen, no bottom nav) ──
-    GoRoute(path: '/tv', builder: (ctx, state) => const BoardShell(child: BoardWaitScreen())),
+    GoRoute(
+      path: '/tv',
+      builder: (ctx, state) {
+        final roomCode = state.uri.queryParameters['code'] ?? 'KARA-0000';
+        return BoardShell(
+          child: BoardWaitScreen(
+            roomCode: roomCode,
+            roomName: 'Party Room',
+          ),
+        );
+      },
+    ),
     GoRoute(path: '/tv/countdown', builder: (ctx, state) => const BoardShell(child: BoardCountdownScreen())),
     GoRoute(path: '/tv/queue', builder: (ctx, state) => const BoardShell(child: BoardQueueScreen())),
     GoRoute(path: '/tv/performance', builder: (ctx, state) => const BoardShell(child: BoardPerformanceScreen())),
@@ -313,6 +361,10 @@ class KaraokiApp extends StatelessWidget {
         ),
         Provider<MicInputService>(
           create: (_) => MicInputService(),
+          dispose: (_, svc) => svc.dispose(),
+        ),
+        Provider<TvAudioService>(
+          create: (_) => TvAudioService(),
           dispose: (_, svc) => svc.dispose(),
         ),
         Provider<RealtimeSyncService>(
