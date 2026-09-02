@@ -10,6 +10,7 @@ import 'providers/app_state.dart';
 import 'services/room_service.dart';
 import 'services/performance_service.dart';
 import 'services/audio_service.dart';
+import 'services/karaoke_playback_service.dart';
 import 'services/mic_service.dart';
 import 'services/realtime_sync_service.dart';
 import 'services/firebase_room_service.dart';
@@ -306,6 +307,10 @@ class KaraokiApp extends StatelessWidget {
         ),
         Provider<PerformanceService>(create: (_) => PerformanceService()),
         Provider<AudioPlaybackService>(create: (_) => AudioPlaybackService()),
+        Provider<KaraokePlaybackService>(
+          create: (_) => KaraokePlaybackService(),
+          dispose: (_, svc) => svc.dispose(),
+        ),
         Provider<MicService>(create: (_) => MicService()),
         Provider<RealtimeSyncService>(
           create: (_) => _isFirebaseConfigured

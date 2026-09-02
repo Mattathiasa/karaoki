@@ -1,51 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../widgets/lyrics.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/ui_components.dart';
+import '../../services/karaoke_playback_service.dart';
+import '../../models/song.dart';
 
-class BoardPerformanceScreen extends StatelessWidget {
-  final String songTitle;
-  final String artist;
-  final String singerName;
-  final String singerInitial;
-  final String? previousLine;
-  final String currentLine;
-  final String? nextLine;
-  final double lineProgress;
-  final double progress;
-  final int score;
-  final int pitch;
-  final int timing;
-  final int combo;
-  final String elapsed;
-  final String duration;
-  final List<QueuePill> upNext;
+/// Board/TV performance screen — shows large lyrics, pitch gauge, score, combo.
+/// Subscribes to [KaraokePlaybackService] for real-time lyric sync and scoring.
+class BoardPerformanceScreen extends StatefulWidget {
+  const BoardPerformanceScreen({super.key});
 
-  const BoardPerformanceScreen({
-    super.key,
-    this.songTitle = 'Neon Midnight',
-    this.artist = 'Vela Cruz',
-    this.singerName = 'Matt',
-    this.singerInitial = 'M',
-    this.previousLine,
-    this.currentLine = '...',
-    this.nextLine,
-    this.lineProgress = 0.0,
-    this.progress = 0.0,
-    this.score = 0,
-    this.pitch = 0,
-    this.timing = 0,
-    this.combo = 0,
-    this.elapsed = '0:00',
-    this.duration = '3:42',
-    this.upNext = const [],
-  });
+  @override
+  State<BoardPerformanceScreen> createState() => _BoardPerformanceScreenState();
+}
+
+class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
+    with SingleTickerProviderStateMixin {
+  late final KaraokePlaybackService _playback;
+  KaraokeState _state = const KaraokeState(song: Song(
+    id: '', title: '', artist: '', genre: '', difficulty: '',
+    duration: Duration.zero,
+  ));
+  Stream<KaraokeState>? _stream;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_stream == null) {
+      _playback = Provider.of<KaraokePlaybackService>(context, listen: false);
+      // Load the first fixture song and start simulated playback
+      _playback.loadSong(fixtureSongs.first);
+      _playback.playSimulated();
+      _stream = _playback.stateStream;
+    }
+  }
+
+  @override
+  void dispose() {
+    _playback.stop();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    return StreamBuilder<KaraokeState>(
+      stream: _stream,
+      initialData: _state,
+      builder: (context, snapshot) {
+        final s = snapshot.data ?? _state;
+        _state = s;
+        return _buildScreen(s);
+      },
+    );
+  }
+
+  Widget _buildScreen(KaraokeState s) {
     return Scaffold(
       backgroundColor: KColors.ink900,
       body: Container(
@@ -90,7 +103,7 @@ class BoardPerformanceScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        songTitle,
+                        s.song.title,
                         style: const TextStyle(
                           fontFamily: 'BricolageGrotesque',
                           fontWeight: FontWeight.w700,
@@ -99,7 +112,7 @@ class BoardPerformanceScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '$artist · Pop',
+                        '${s.song.artist} \u00b7 ${s.song.genre}',
                         style: KTypography.boardMono.copyWith(fontSize: 14),
                       ),
                     ],
@@ -149,7 +162,7 @@ class BoardPerformanceScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                      '$elapsed / $duration',
+                      '${s.positionLabel} / ${s.durationLabel}',
                       style: KTypography.boardMono.copyWith(fontSize: 13),
                     ),
                   ),
@@ -160,7 +173,7 @@ class BoardPerformanceScreen extends StatelessWidget {
             // Progress bar
             Padding(
               padding: const EdgeInsets.fromLTRB(44, 16, 44, 0),
-              child: KProgressBar(progress: progress, height: 5),
+              child: KProgressBar(progress: s.overallProgress, height: 5),
             ),
 
             // Lyrics (dominant centre)
@@ -169,12 +182,23 @@ class BoardPerformanceScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                   horizontal: KSpacing.boardPadding * 2,
                 ),
-                child: KBoardLyricWidget(
-                  previousLine: previousLine,
-                  currentLine: currentLine,
-                  nextLine: nextLine,
-                  lineProgress: lineProgress,
-                ),
+                child: s.currentLine.isNotEmpty
+                    ? KBoardLyricWidget(
+                        previousLine: s.previousLine,
+                        currentLine: s.currentLine,
+                        nextLine: s.nextLine,
+                        lineProgress: s.lineProgress,
+                      )
+                    : const Center(
+                        child: Text(
+                          '...',
+                          style: TextStyle(
+                            fontFamily: 'BricolageGrotesque',
+                            fontSize: 64,
+                            color: KColors.bone28,
+                          ),
+                        ),
+                      ),
               ),
             ),
 
@@ -189,15 +213,15 @@ class BoardPerformanceScreen extends StatelessWidget {
               child: Row(
                 children: [
                   // Now singing
-                  _BottomColumn(
+                  const _BottomColumn(
                     label: '01 / NOW SINGING',
                     child: Row(
                       children: [
-                        KAvatar(initial: singerInitial, size: 50),
-                        const SizedBox(width: 12),
+                        KAvatar(initial: 'M', size: 50),
+                        SizedBox(width: 12),
                         Text(
-                          singerName,
-                          style: const TextStyle(
+                          'Matt',
+                          style: TextStyle(
                             fontFamily: 'BricolageGrotesque',
                             fontWeight: FontWeight.w700,
                             fontSize: 26,
@@ -220,7 +244,7 @@ class BoardPerformanceScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
-                        '$score',
+                        '${s.score}',
                         style: const TextStyle(
                           fontFamily: 'BricolageGrotesque',
                           fontWeight: FontWeight.w800,
@@ -238,12 +262,12 @@ class BoardPerformanceScreen extends StatelessWidget {
                         Row(
                           children: [
                             Text(
-                              'PITCH $pitch%',
+                              'PITCH ${s.pitch}%',
                               style: KTypography.boardMono.copyWith(fontSize: 13),
                             ),
                             const SizedBox(width: 16),
                             Text(
-                              'TIMING $timing%',
+                              'TIMING ${s.timing}%',
                               style: KTypography.boardMono.copyWith(fontSize: 13),
                             ),
                           ],
@@ -265,7 +289,7 @@ class BoardPerformanceScreen extends StatelessWidget {
                         const Icon(Icons.whatshot, color: KColors.gold, size: 34),
                         const SizedBox(width: 8),
                         Text(
-                          'x$combo',
+                          'x${s.combo}',
                           style: const TextStyle(
                             fontFamily: 'BricolageGrotesque',
                             fontWeight: FontWeight.w800,
@@ -295,7 +319,7 @@ class BoardPerformanceScreen extends StatelessWidget {
                     style: KTypography.boardMono.copyWith(fontSize: 13),
                   ),
                   const SizedBox(width: 16),
-                  ...upNext.map((p) => Container(
+                  ...fixtureSongs.skip(1).take(3).map((song) => Container(
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -306,7 +330,7 @@ class BoardPerformanceScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                      '${p.title} · ${p.requester}',
+                      '${song.title} \u00b7 ${song.artist}',
                       style: KTypography.boardMono.copyWith(fontSize: 12),
                     ),
                   )),
