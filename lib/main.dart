@@ -9,6 +9,7 @@ import 'services/performance_service.dart';
 import 'services/audio_service.dart';
 import 'services/mic_service.dart';
 import 'services/realtime_sync_service.dart';
+
 // Onboarding
 import 'screens/onboarding/splash_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
@@ -58,69 +59,200 @@ import 'screens/edge_states/edge_states.dart';
 
 // Widgets
 import 'widgets/board_shell.dart';
+import 'widgets/app_shell.dart';
 
 void main() {
   runApp(const KaraokiApp());
 }
 
+// ─── Navigator Keys ────────────────────────────────
+final _shellKey = GlobalKey<NavigatorState>();
+
 // ─── Go Router Configuration ───────────────────────
 final _router = GoRouter(
   initialLocation: '/',
   routes: [
-    // Phone / Controller routes
-    GoRoute(path: '/', builder: (ctx, state) => const SplashScreen(key: ValueKey('splash'))),
-    GoRoute(path: '/onboarding', builder: (ctx, state) => const OnboardingScreen(key: ValueKey('onboarding'))),
-    GoRoute(path: '/welcome', builder: (ctx, state) => const WelcomeScreen(key: ValueKey('welcome'))),
-    GoRoute(path: '/signin', builder: (ctx, state) => const SigninScreen(key: ValueKey('signin'))),
-    GoRoute(path: '/signup', builder: (ctx, state) => const SignupScreen(key: ValueKey('signup'))),
-    GoRoute(path: '/setup', builder: (ctx, state) => const SetupScreen(key: ValueKey('setup'))),
-    GoRoute(path: '/home', builder: (ctx, state) => const HomeScreen(key: ValueKey('home'))),
-    GoRoute(path: '/create-room', builder: (ctx, state) => const CreateRoomScreen(key: ValueKey('createRoom'))),
-    GoRoute(path: '/join-room', builder: (ctx, state) => const JoinRoomScreen(key: ValueKey('joinRoom'))),
-    GoRoute(path: '/qr', builder: (ctx, state) => const QrScreen(key: ValueKey('qr'))),
-    GoRoute(path: '/lobby', builder: (ctx, state) => const LobbyScreen(key: ValueKey('lobby'))),
-    GoRoute(path: '/library', builder: (ctx, state) => const LibraryScreen(key: ValueKey('library'))),
-    GoRoute(path: '/search', builder: (ctx, state) => const SearchScreen(key: ValueKey('search'))),
-    GoRoute(path: '/details', builder: (ctx, state) => const DetailsScreen(key: ValueKey('details'))),
-    GoRoute(path: '/queue', builder: (ctx, state) => const QueueScreen(key: ValueKey('queueScr'))),
-    GoRoute(path: '/turn-next', builder: (ctx, state) => const TurnNextScreen(key: ValueKey('turnNext'))),
-    GoRoute(path: '/turn-now', builder: (ctx, state) => const TurnNowScreen(key: ValueKey('turnNow'))),
-    GoRoute(path: '/singing', builder: (ctx, state) => const SingingScreen(key: ValueKey('singing'))),
-    GoRoute(path: '/complete', builder: (ctx, state) => const CompleteScreen(key: ValueKey('complete'))),
-    GoRoute(path: '/leaderboard', builder: (ctx, state) => const LeaderboardScreen(key: ValueKey('leaderboard'))),
-    GoRoute(path: '/history', builder: (ctx, state) => const HistoryScreen(key: ValueKey('history'))),
-    GoRoute(path: '/achievements', builder: (ctx, state) => const AchievementsScreen(key: ValueKey('achievements'))),
-    GoRoute(path: '/profile', builder: (ctx, state) => const ProfileScreen(key: ValueKey('profile'))),
-    GoRoute(path: '/settings', builder: (ctx, state) => const SettingsScreen(key: ValueKey('settings'))),
+    // ── Onboarding (no bottom nav) ──
+    GoRoute(
+      path: '/',
+      builder: (ctx, state) => SplashScreen(
+        onComplete: () => ctx.go('/onboarding'),
+      ),
+    ),
+    GoRoute(
+      path: '/onboarding',
+      builder: (ctx, state) => OnboardingScreen(
+        onComplete: () => ctx.go('/welcome'),
+      ),
+    ),
+    GoRoute(
+      path: '/welcome',
+      builder: (ctx, state) => WelcomeScreen(
+        onContinue: () => ctx.go('/home'),
+      ),
+    ),
+    GoRoute(
+      path: '/signin',
+      builder: (ctx, state) => SigninScreen(
+        onSignedIn: () => ctx.go('/home'),
+      ),
+    ),
+    GoRoute(
+      path: '/signup',
+      builder: (ctx, state) => SignupScreen(
+        onSignedUp: () => ctx.go('/setup'),
+      ),
+    ),
+    GoRoute(
+      path: '/setup',
+      builder: (ctx, state) => SetupScreen(
+        onComplete: () => ctx.go('/home'),
+      ),
+    ),
 
-    // Board / TV routes
-    GoRoute(path: '/tv', builder: (ctx, state) => const BoardShell(child: BoardWaitScreen(key: ValueKey('boardWait')))),
-    GoRoute(path: '/tv/countdown', builder: (ctx, state) => const BoardShell(child: BoardCountdownScreen(key: ValueKey('boardCountdown')))),
-    GoRoute(path: '/tv/queue', builder: (ctx, state) => const BoardShell(child: BoardQueueScreen(key: ValueKey('boardQueue')))),
-    GoRoute(path: '/tv/performance', builder: (ctx, state) => const BoardShell(child: BoardPerformanceScreen(key: ValueKey('boardPerf')))),
-    GoRoute(path: '/tv/vs', builder: (ctx, state) => const BoardShell(child: BoardVsScreen(key: ValueKey('boardVs')))),
-    GoRoute(path: '/tv/reveal', builder: (ctx, state) => const BoardShell(child: BoardRevealScreen(key: ValueKey('boardReveal')))),
-    GoRoute(path: '/tv/leaderboard', builder: (ctx, state) => const BoardShell(child: BoardLeaderboardScreen(key: ValueKey('boardLeaderboard')))),
+    // ── Phone routes with bottom nav shell ──
+    ShellRoute(
+      navigatorKey: _shellKey,
+      builder: (ctx, state, child) => AppShell(child: child),
+      routes: [
+        GoRoute(
+          path: '/home',
+          builder: (ctx, state) => HomeScreen(
+            onJoinRoom: () => ctx.go('/join-room'),
+            onCreateRoom: () => ctx.go('/create-room'),
+            onSolo: () => ctx.go('/library'),
+            onProfile: () => ctx.go('/profile'),
+          ),
+        ),
+        GoRoute(
+          path: '/create-room',
+          builder: (ctx, state) => CreateRoomScreen(
+            onCreate: () => ctx.go('/lobby'),
+          ),
+        ),
+        GoRoute(
+          path: '/join-room',
+          builder: (ctx, state) => JoinRoomScreen(
+            onJoin: () => ctx.go('/lobby'),
+            onScan: () => ctx.go('/qr'),
+          ),
+        ),
+        GoRoute(
+          path: '/qr',
+          builder: (ctx, state) => const QrScreen(),
+        ),
+        GoRoute(
+          path: '/lobby',
+          builder: (ctx, state) => LobbyScreen(
+            onStart: () => ctx.go('/turn-next'),
+            onBrowseSongs: () => ctx.go('/library'),
+          ),
+        ),
+        GoRoute(
+          path: '/library',
+          builder: (ctx, state) => LibraryScreen(
+            onSongSelected: () => ctx.go('/details'),
+          ),
+        ),
+        GoRoute(
+          path: '/search',
+          builder: (ctx, state) => const SearchScreen(),
+        ),
+        GoRoute(
+          path: '/details',
+          builder: (ctx, state) => DetailsScreen(
+            onAddToQueue: () => ctx.go('/queue'),
+          ),
+        ),
+        GoRoute(
+          path: '/queue',
+          builder: (ctx, state) => QueueScreen(
+            onAddMore: () => ctx.go('/library'),
+          ),
+        ),
+        GoRoute(
+          path: '/turn-next',
+          builder: (ctx, state) => TurnNextScreen(
+            onReady: () => ctx.go('/turn-now'),
+            onSkip: () => ctx.go('/queue'),
+          ),
+        ),
+        GoRoute(
+          path: '/turn-now',
+          builder: (ctx, state) => TurnNowScreen(
+            onStart: () => ctx.go('/singing'),
+          ),
+        ),
+        GoRoute(
+          path: '/singing',
+          builder: (ctx, state) => SingingScreen(
+            onComplete: () => ctx.go('/complete'),
+          ),
+        ),
+        GoRoute(
+          path: '/complete',
+          builder: (ctx, state) => const CompleteScreen(),
+        ),
+        GoRoute(
+          path: '/leaderboard',
+          builder: (ctx, state) => const LeaderboardScreen(),
+        ),
+        GoRoute(
+          path: '/history',
+          builder: (ctx, state) => HistoryScreen(
+            onBack: () => ctx.go('/profile'),
+          ),
+        ),
+        GoRoute(
+          path: '/achievements',
+          builder: (ctx, state) => AchievementsScreen(
+            onBack: () => ctx.go('/profile'),
+          ),
+        ),
+        GoRoute(
+          path: '/profile',
+          builder: (ctx, state) => ProfileScreen(
+            onBack: () => ctx.go('/home'),
+            onSettings: () => ctx.go('/settings'),
+          ),
+        ),
+        GoRoute(
+          path: '/settings',
+          builder: (ctx, state) => SettingsScreen(
+            onBack: () => ctx.go('/profile'),
+          ),
+        ),
+      ],
+    ),
 
-    // Game mode routes
-    GoRoute(path: '/battle', builder: (ctx, state) => const BattleScreen(key: ValueKey('battle'))),
-    GoRoute(path: '/team', builder: (ctx, state) => const TeamScreen(key: ValueKey('team'))),
-    GoRoute(path: '/duet', builder: (ctx, state) => const DuetScreen(key: ValueKey('duet'))),
-    GoRoute(path: '/pass-mic', builder: (ctx, state) => const PassMicScreen(key: ValueKey('passMic'))),
+    // ── Board / TV Routes (full-screen, no bottom nav) ──
+    GoRoute(path: '/tv', builder: (ctx, state) => const BoardShell(child: BoardWaitScreen())),
+    GoRoute(path: '/tv/countdown', builder: (ctx, state) => const BoardShell(child: BoardCountdownScreen())),
+    GoRoute(path: '/tv/queue', builder: (ctx, state) => const BoardShell(child: BoardQueueScreen())),
+    GoRoute(path: '/tv/performance', builder: (ctx, state) => const BoardShell(child: BoardPerformanceScreen())),
+    GoRoute(path: '/tv/vs', builder: (ctx, state) => const BoardShell(child: BoardVsScreen())),
+    GoRoute(path: '/tv/reveal', builder: (ctx, state) => const BoardShell(child: BoardRevealScreen())),
+    GoRoute(path: '/tv/leaderboard', builder: (ctx, state) => const BoardShell(child: BoardLeaderboardScreen())),
 
-    // Edge state routes
-    GoRoute(path: '/edge/empty-queue', builder: (ctx, state) => const EmptyQueueScreen(key: ValueKey('emptyQueue'))),
-    GoRoute(path: '/edge/no-results', builder: (ctx, state) => const NoResultsScreen(key: ValueKey('noResults'))),
-    GoRoute(path: '/edge/mic-permission', builder: (ctx, state) => const MicPermissionScreen(key: ValueKey('micPermission'))),
-    GoRoute(path: '/edge/mic-lost', builder: (ctx, state) => const MicLostScreen(key: ValueKey('micLost'))),
-    GoRoute(path: '/edge/weak-connection', builder: (ctx, state) => const WeakConnectionScreen(key: ValueKey('weakConnection'))),
-    GoRoute(path: '/edge/player-dropped', builder: (ctx, state) => const PlayerDroppedScreen(key: ValueKey('playerDropped'))),
-    GoRoute(path: '/edge/room-full', builder: (ctx, state) => const RoomFullScreen(key: ValueKey('roomFull'))),
-    GoRoute(path: '/edge/bad-code', builder: (ctx, state) => const BadCodeScreen(key: ValueKey('badCode'))),
-    GoRoute(path: '/edge/unavailable', builder: (ctx, state) => const UnavailableSongScreen(key: ValueKey('unavailable'))),
-    GoRoute(path: '/edge/no-history', builder: (ctx, state) => const NoHistoryScreen(key: ValueKey('noHistory'))),
-    GoRoute(path: '/edge/no-badges', builder: (ctx, state) => const NoBadgesScreen(key: ValueKey('noBadges'))),
-    GoRoute(path: '/edge/waiting', builder: (ctx, state) => const WaitingScreen(key: ValueKey('waiting'))),
+    // ── Game Mode Routes (full-screen) ──
+    GoRoute(path: '/battle', builder: (ctx, state) => const BattleScreen()),
+    GoRoute(path: '/team', builder: (ctx, state) => const TeamScreen()),
+    GoRoute(path: '/duet', builder: (ctx, state) => const DuetScreen()),
+    GoRoute(path: '/pass-mic', builder: (ctx, state) => const PassMicScreen()),
+
+    // ── Edge State Routes (full-screen) ──
+    GoRoute(path: '/edge/empty-queue', builder: (ctx, state) => const EmptyQueueScreen()),
+    GoRoute(path: '/edge/no-results', builder: (ctx, state) => const NoResultsScreen()),
+    GoRoute(path: '/edge/mic-permission', builder: (ctx, state) => const MicPermissionScreen()),
+    GoRoute(path: '/edge/mic-lost', builder: (ctx, state) => const MicLostScreen()),
+    GoRoute(path: '/edge/weak-connection', builder: (ctx, state) => const WeakConnectionScreen()),
+    GoRoute(path: '/edge/player-dropped', builder: (ctx, state) => const PlayerDroppedScreen()),
+    GoRoute(path: '/edge/room-full', builder: (ctx, state) => const RoomFullScreen()),
+    GoRoute(path: '/edge/bad-code', builder: (ctx, state) => const BadCodeScreen()),
+    GoRoute(path: '/edge/unavailable', builder: (ctx, state) => const UnavailableSongScreen()),
+    GoRoute(path: '/edge/no-history', builder: (ctx, state) => const NoHistoryScreen()),
+    GoRoute(path: '/edge/no-badges', builder: (ctx, state) => const NoBadgesScreen()),
+    GoRoute(path: '/edge/waiting', builder: (ctx, state) => const WaitingScreen()),
   ],
 );
 
