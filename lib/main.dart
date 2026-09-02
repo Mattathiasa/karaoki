@@ -191,7 +191,10 @@ final _router = GoRouter(
         ),
         GoRoute(
           path: '/complete',
-          builder: (ctx, state) => const CompleteScreen(),
+          builder: (ctx, state) => CompleteScreen(
+            onContinue: () => ctx.go('/queue'),
+            onLeaderboard: () => ctx.go('/leaderboard'),
+          ),
         ),
         GoRoute(
           path: '/leaderboard',

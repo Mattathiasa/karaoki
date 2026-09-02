@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
@@ -6,6 +7,7 @@ import '../../theme/radius.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/ui_components.dart';
 import '../../models/song.dart';
+import '../../providers/app_state.dart';
 
 class HomeScreen extends StatelessWidget {
   final VoidCallback? onJoinRoom;
@@ -23,6 +25,10 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = context.watch<AppState>();
+    final userName = appState.userName;
+    final initial = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
+
     return Scaffold(
       backgroundColor: KColors.ink800,
       body: SafeArea(
@@ -89,10 +95,10 @@ class HomeScreen extends StatelessWidget {
                     // Avatar
                     GestureDetector(
                       onTap: onProfile,
-                      child: const Stack(
+                      child: Stack(
                         children: [
-                          KAvatar(initial: 'M', size: 50),
-                          Positioned(
+                          KAvatar(initial: initial, size: 50),
+                          const Positioned(
                             right: 0,
                             bottom: 0,
                             child: KLiveDot(color: KColors.mint, size: 8),

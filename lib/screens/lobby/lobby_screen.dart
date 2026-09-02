@@ -1,37 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/cards.dart';
+import '../../providers/app_state.dart';
 
-class LobbyScreen extends StatelessWidget {
-  final String roomName;
-  final String roomCode;
-  final String hostName;
-  final String mode;
-  final int playerCount;
-  final int maxPlayers;
-  final List<LobbyPlayer> players;
+class LobbyScreen extends StatefulWidget {
   final VoidCallback? onStart;
   final VoidCallback? onBrowseSongs;
 
   const LobbyScreen({
     super.key,
-    this.roomName = 'Friday Night Fire',
-    this.roomCode = 'KARA-7821',
-    this.hostName = 'Host',
-    this.mode = 'CLASSIC',
-    this.playerCount = 4,
-    this.maxPlayers = 8,
-    this.players = const [],
     this.onStart,
     this.onBrowseSongs,
   });
 
   @override
+  State<LobbyScreen> createState() => _LobbyScreenState();
+}
+
+class _LobbyScreenState extends State<LobbyScreen> {
+  bool _isReady = false;
+
+  @override
   Widget build(BuildContext context) {
+    final appState = context.watch<AppState>();
+    final room = appState.currentRoom;
+    final players = appState.players;
+    final isHost = appState.isHost;
+
+    // Use live data from AppState, fall back to demo data
+    final roomName = room?.name ?? 'Friday Night Fire';
+    final roomCode = room?.code ?? 'KARA-7821';
+    final hostName = isHost ? appState.userName : 'Host';
+    final mode = room?.mode.name.toUpperCase() ?? 'CLASSIC';
+    final playerCount = players.isEmpty ? 4 : players.length;
+    final maxPlayers = room?.maxPlayers ?? 8;
+
+    // Demo players when no real data
+    final displayPlayers = players.isEmpty
+        ? const [
+            LobbyPlayer(name: 'Makeda', initial: 'M', level: 12, ready: true, isHost: true),
+            LobbyPlayer(name: 'Samuel', initial: 'S', level: 8, ready: true),
+            LobbyPlayer(name: 'Hana', initial: 'H', level: 15, ready: true),
+            LobbyPlayer(name: 'Daniel', initial: 'D', level: 6, ready: false),
+          ]
+        : players.map((p) => LobbyPlayer(
+              name: p.name,
+              initial: p.name.isNotEmpty ? p.name[0].toUpperCase() : '?',
+              level: p.level,
+              ready: p.ready,
+              isHost: p.id == room?.hostId,
+            )).toList();
+
     return Scaffold(
       backgroundColor: KColors.ink800,
       body: SafeArea(
@@ -122,10 +146,10 @@ class LobbyScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     Expanded(
                       child: ListView.separated(
-                        itemCount: players.length,
+                        itemCount: displayPlayers.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (context, i) {
-                          final p = players[i];
+                          final p = displayPlayers[i];
                           return KPlayerCard(
                             name: p.name,
                             initial: p.initial,
@@ -151,13 +175,12 @@ class LobbyScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // Browse songs + Queue
                   Row(
                     children: [
                       Expanded(
                         child: KSecondaryButton(
                           label: 'Browse songs',
-                          onPressed: onBrowseSongs,
+                          onPressed: widget.onBrowseSongs,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -171,28 +194,28 @@ class LobbyScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   // Start game (host only)
-                  KPrimaryButton(
-                    label: 'Start game',
-                    onPressed: onStart,
-                  ),
-                  const SizedBox(height: 12),
-                  // Ready up + Leave
-                  Row(
-                    children: [
-                      Expanded(
-                        child: KSecondaryButton(
-                          label: 'Ready up',
-                          onPressed: () {},
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: KDangerButton(
-                          label: 'Leave room',
-                          onPressed: () {},
-                        ),
-                      ),
-                    ],
+                  if (isHost)
+                    KPrimaryButton(
+                      label: 'Start game',
+                      onPressed: widget.onStart,
+                    ),
+                  if (!isHost) ...[
+                    KPrimaryButton(
+                      label: _isReady ? 'Cancel ready' : 'Ready up',
+                      onPressed: () => setState(() => _isReady = !_isReady),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  // Leave room
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: KDangerButton(
+                      label: 'Leave room',
+                      onPressed: () {
+                        appState.leaveRoom();
+                        Navigator.of(context).maybePop();
+                      },
+                    ),
                   ),
                 ],
               ),

@@ -14,6 +14,8 @@ class CompleteScreen extends StatelessWidget {
   final int energy;
   final bool isNewBest;
   final int previousBest;
+  final VoidCallback? onContinue;
+  final VoidCallback? onLeaderboard;
 
   const CompleteScreen({
     super.key,
@@ -24,6 +26,8 @@ class CompleteScreen extends StatelessWidget {
     this.energy = 95,
     this.isNewBest = true,
     this.previousBest = 87,
+    this.onContinue,
+    this.onLeaderboard,
   });
 
   @override
@@ -101,7 +105,19 @@ class CompleteScreen extends StatelessWidget {
               const SizedBox(height: 16),
               KPrimaryButton(
                 label: 'See the leaderboard',
-                onPressed: () {},
+                onPressed: onLeaderboard,
+              ),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: onContinue,
+                child: Text(
+                  'Continue singing',
+                  style: KTypography.uiButton.copyWith(
+                    color: KColors.bone55,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 13,
+                  ),
+                ),
               ),
               const SizedBox(height: 32),
             ],
