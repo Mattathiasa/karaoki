@@ -1,20 +1,40 @@
 import 'package:flutter/foundation.dart';
 import '../models/room.dart';
 import '../models/song.dart';
+import '../services/auth_service.dart';
 
 /// Central app state managed by Provider
 /// Holds room state, player identity, queue, and game flow
 class AppState extends ChangeNotifier {
+  AppState(this._auth) {
+    _auth.addListener(_onAuthChanged);
+    _onAuthChanged();
+  }
+
+  final AuthService _auth;
+
+  void _onAuthChanged() {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    if (_userId == user.uid) return;
+    _userId = user.uid;
+    _userName = user.effectiveName;
+    _isGuest = user.isAnonymous;
+    notifyListeners();
+  }
+
   // ─── User Identity ─────────────────────────────
-  final String _userId = 'user-${DateTime.now().millisecondsSinceEpoch}';
+  String _userId = 'user-${DateTime.now().millisecondsSinceEpoch}';
   String _userName = 'Player';
   final String _userAvatar = '';
   int _userLevel = 1;
+  bool _isGuest = true;
 
   String get userId => _userId;
   String get userName => _userName;
   String get userAvatar => _userAvatar;
   int get userLevel => _userLevel;
+  bool get isGuest => _isGuest;
 
   void setUserName(String name) {
     _userName = name;
@@ -93,6 +113,9 @@ class AppState extends ChangeNotifier {
     _liveScore = score;
     notifyListeners();
   }
+
+  // ─── Auth passthrough ──────────────────────────
+  AuthService get auth => _auth;
 
   // ─── Board Mode ────────────────────────────────
   bool _isBoardMode = false;
