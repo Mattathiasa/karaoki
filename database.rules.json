@@ -1,0 +1,126 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "rooms": {
+      "$roomId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+
+        "players": {
+          "$uid": {
+            ".write": "auth.uid === $uid || (!data.exists() && newData.exists() && auth.uid === $uid)",
+            ".validate": "newData.hasChildren(['name', 'ready', 'connected'])",
+            "name": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24"
+            },
+            "level": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100" },
+            "ready": { ".validate": "newData.isBoolean()" },
+            "connected": { ".validate": "newData.isBoolean()" },
+            "score": {
+              ".write": false,
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "$other": { ".validate": false }
+          }
+        },
+
+        "queue": {
+          "$entryId": {
+            ".write": "auth != null && (!data.exists() && newData.exists())",
+            ".validate": "newData.hasChildren(['songId', 'requestedBy', 'position', 'state'])",
+            "songId": { ".validate": "newData.isString() && newData.val().length <= 64" },
+            "requestedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" },
+            "position": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 500" },
+            "state": { ".validate": "newData.isString() && ['queued','playing','done','skipped'].contains(newData.val())" },
+            "$other": { ".validate": false }
+          }
+        },
+
+        "presence": {
+          "$uid": {
+            ".write": "auth.uid === $uid",
+            ".validate": "newData.hasChildren(['online', 'lastSeen'])",
+            "online": { ".validate": "newData.isBoolean()" },
+            "lastSeen": { ".validate": "newData.val() <= now + 60000" },
+            "$other": { ".validate": false }
+          }
+        },
+
+        "heartbeat": {
+          "$uid": {
+            ".write": "auth.uid === $uid",
+            ".validate": "newData.hasChildren(['timestamp'])",
+            "timestamp": { ".validate": "newData.val() <= now + 60000" },
+            "$other": { ".validate": false }
+          }
+        },
+
+        "events": {
+          "$eventId": {
+            ".write": "auth != null && (!data.exists() && newData.exists())",
+            ".validate": "newData.hasChildren(['type', 'senderId', 'timestamp'])",
+            "senderId": { ".validate": "newData.val() === auth.uid" },
+            "data": {
+              ".validate": "newData.isString() && newData.val().length <= 2048"
+            },
+            "$other": { ".validate": false }
+          }
+        },
+
+        "perf": {
+          "current": {
+            ".read": "auth != null",
+            ".write": "auth != null",
+            "live": {
+              "score": {
+                ".write": false
+              }
+            }
+          }
+        },
+
+        "status": {
+          ".write": "auth != null",
+          ".validate": "newData.isString() && ['waiting','countdown','performing','revealing','ranking','queue','idle'].contains(newData.val())"
+        },
+
+        "hostId": {
+          ".write": "auth != null && root.child('rooms').child($roomId).child('hostId').val() === auth.uid"
+        }
+      }
+    },
+
+    "roomCodes": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() && newData.isString())",
+        ".validate": "newData.isString() && newData.val().length <= 64"
+      }
+    },
+
+    "users": {
+      "$uid": {
+        ".read": "auth.uid === $uid",
+        ".write": "auth.uid === $uid",
+        ".validate": "newData.hasChildren(['displayName'])",
+        "displayName": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24" },
+        "username": { ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 20" },
+        "level": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100" },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "performances": {
+      "$perfId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() && newData.exists())",
+        ".validate": "newData.hasChildren(['uid', 'songId', 'score'])",
+        "uid": { ".validate": "newData.val() === auth.uid" },
+        "score": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}
