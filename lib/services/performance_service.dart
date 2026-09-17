@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:math';
 import '../models/song.dart';
+import 'mic_service.dart' show PitchDetector;
 
 /// Performance service: manages the song clock and score computation.
 ///

@@ -110,16 +110,13 @@ class FirebaseRoomService implements RoomService {
 
     // Add player atomically: transaction guards the capacity check so
     // concurrent joins cannot exceed maxPlayers.
-    late Room joinedRoom;
     final result = await _playersRef(roomId).child(userId)
         .runTransaction((current) {
-      if (current.exists) {
+      if (current != null) {
         // Player reconnecting, just update presence below.
-        joinedRoom = room;
         return Transaction.success(current);
       }
       if (playerCount >= room.maxPlayers) {
-        joinedRoom = room;
         return Transaction.abort();
       }
       final player = Player(
@@ -129,7 +126,6 @@ class FirebaseRoomService implements RoomService {
         ready: false,
         connected: true,
       );
-      joinedRoom = room;
       return Transaction.success(player.toJson());
     });
 
