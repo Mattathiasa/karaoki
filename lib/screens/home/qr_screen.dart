@@ -1,13 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../widgets/buttons.dart';
 
-class QrScreen extends StatelessWidget {
+class QrScreen extends StatefulWidget {
   final VoidCallback? onCancel;
   final VoidCallback? onSimulate;
 
   const QrScreen({super.key, this.onCancel, this.onSimulate});
+
+  @override
+  State<QrScreen> createState() => _QrScreenState();
+}
+
+class _QrScreenState extends State<QrScreen> {
+  bool _permissionGranted = false;
+  bool _checked = false;
+  bool _permanentlyDenied = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _requestPermission();
+  }
+
+  Future<void> _requestPermission() async {
+    final status = await Permission.camera.request();
+    if (!mounted) return;
+    setState(() {
+      _permissionGranted = status.isGranted;
+      _permanentlyDenied = status.isPermanentlyDenied;
+      _checked = true;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +50,7 @@ class QrScreen extends StatelessWidget {
                   Text('CAMERA PREVIEW', style: KTypography.monoLabel.copyWith(fontSize: 10, color: KColors.bone45)),
                   const Spacer(),
                   GestureDetector(
-                    onTap: onCancel,
+                    onTap: widget.onCancel,
                     child: Text('Cancel', style: KTypography.uiButton.copyWith(
                       color: KColors.bone55, fontWeight: FontWeight.w400, fontSize: 14,
                     )),
@@ -32,10 +58,18 @@ class QrScreen extends StatelessWidget {
                 ],
               ),
             ),
-            // Camera placeholder
+            // Camera placeholder / permission state
             Expanded(
               child: Center(
-                child: Container(
+                child: !_checked
+                    ? const CircularProgressIndicator(color: KColors.lime)
+                    : !_permissionGranted
+                        ? _PermissionBlocked(
+                            permanentlyDenied: _permanentlyDenied,
+                            onRetry: _requestPermission,
+                            onEnterCode: widget.onCancel,
+                          )
+                        : Container(
                   width: 280,
                   height: 280,
                   decoration: BoxDecoration(
@@ -70,7 +104,7 @@ class QrScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                ),
+                        )
               ),
             ),
             // Instructions
@@ -78,27 +112,104 @@ class QrScreen extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  Text(
-                    'Align the QR code within the frame',
-                    style: KTypography.uiBody.copyWith(fontSize: 14.5),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  KPrimaryButton(label: 'Simulate successful scan', onPressed: onSimulate),
-                  const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Text(
-                      "Camera permission blocked? Enter code instead",
-                      style: KTypography.monoLabel.copyWith(fontSize: 10, color: KColors.bone45),
+                  if (_permissionGranted) ...[
+                    Text(
+                      'Align the QR code within the frame',
+                      style: KTypography.uiBody.copyWith(fontSize: 14.5),
+                      textAlign: TextAlign.center,
                     ),
+                    const SizedBox(height: 20),
+                  ],
+                  KPrimaryButton(
+                    label: _permissionGranted ? 'Simulate successful scan' : 'Enter code instead',
+                    onPressed: _permissionGranted ? widget.onSimulate : widget.onCancel,
                   ),
+                  if (_permissionGranted) ...[
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: widget.onCancel,
+                      child: Text(
+                        "Camera permission blocked? Enter code instead",
+                        style: KTypography.monoLabel.copyWith(fontSize: 10, color: KColors.bone45),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Explainer shown when camera permission is denied or blocked,
+/// per the `micPerm`-style edge state in SCREENS.md.
+class _PermissionBlocked extends StatelessWidget {
+  final bool permanentlyDenied;
+  final VoidCallback onRetry;
+  final VoidCallback? onEnterCode;
+
+  const _PermissionBlocked({
+    required this.permanentlyDenied,
+    required this.onRetry,
+    this.onEnterCode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              gradient: const LinearGradient(colors: [KColors.lime, KColors.tangerine]),
+            ),
+            child: const Icon(Icons.photo_camera, color: KColors.onAccent, size: 26),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Zemaoki needs your camera',
+            style: KTypography.displaySection.copyWith(fontSize: 20, color: KColors.bone),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'The camera is used only to scan the room QR code on the board. Nothing is recorded or saved.',
+            style: KTypography.uiBody.copyWith(fontSize: 13.5, color: KColors.bone55),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          KSecondaryButton(
+            label: permanentlyDenied ? 'Open settings' : 'Allow camera',
+            onPressed: () async {
+              if (permanentlyDenied) {
+                await openAppSettings();
+              } else {
+                onRetry();
+              }
+            },
+          ),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: onEnterCode,
+            child: Text(
+              'Not now — I\'ll enter the code',
+              style: KTypography.uiButton.copyWith(
+                color: KColors.bone55,
+                fontWeight: FontWeight.w400,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
