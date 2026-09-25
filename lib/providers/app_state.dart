@@ -131,8 +131,35 @@ class AppState extends ChangeNotifier {
   List<QueueEntry> _queue = [];
   List<QueueEntry> get queue => _queue;
 
+  /// Songs resolved by id for rendering queue entries. Populated when
+  /// entries are added locally; fixture songs fill any gaps.
+  final Map<String, Song> _queueSongs = {};
+  Song songForEntry(QueueEntry entry) {
+    final song = _queueSongs[entry.songId];
+    if (song != null) return song;
+    return fixtureSongs.firstWhere(
+      (s) => s.id == entry.songId,
+      orElse: () => fixtureSongs.first,
+    );
+  }
+
   void updateQueue(List<QueueEntry> entries) {
     _queue = entries;
+    notifyListeners();
+  }
+
+  /// Append a song to the local queue view. The RoomService/realtime call
+  /// happens in the screen; this mirrors the result so the UI updates
+  /// immediately and offline (stub mode) still works.
+  void addToQueue(QueueEntry entry, Song song) {
+    _queue = [..._queue, entry];
+    _queueSongs[entry.songId] = song;
+    notifyListeners();
+  }
+
+  /// Remove a queue entry locally, e.g. after a successful service call.
+  void removeFromQueue(String entryId) {
+    _queue = _queue.where((e) => e.entryId != entryId).toList();
     notifyListeners();
   }
 
