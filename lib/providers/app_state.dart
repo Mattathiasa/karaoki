@@ -84,6 +84,11 @@ class AppState extends ChangeNotifier {
   int _liveScore = 0;
   int get liveScore => _liveScore;
 
+  /// Final score breakdown of the last completed performance. Populated by
+  /// SingingScreen when the performance ends; consumed by CompleteScreen.
+  ScoreBreakdown? _lastBreakdown;
+  ScoreBreakdown? get lastBreakdown => _lastBreakdown;
+
   void setCurrentSong(Song song) {
     _currentSong = song;
     notifyListeners();
@@ -91,6 +96,28 @@ class AppState extends ChangeNotifier {
 
   void updateLiveScore(int score) {
     _liveScore = score;
+    notifyListeners();
+  }
+
+  /// Store the final score breakdown for the performance that just ended.
+  void setLastBreakdown({
+    required int pitch,
+    required int timing,
+    required int consistency,
+    required int energy,
+  }) {
+    _lastBreakdown = ScoreBreakdown(
+      pitch: pitch,
+      timing: timing,
+      consistency: consistency,
+      energy: energy,
+    );
+    notifyListeners();
+  }
+
+  /// Clear the stored breakdown, e.g. when starting a new performance.
+  void clearLastBreakdown() {
+    _lastBreakdown = null;
     notifyListeners();
   }
 

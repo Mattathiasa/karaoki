@@ -11,6 +11,7 @@ import '../../services/performance_service.dart';
 import '../../services/karaoke_playback_service.dart';
 import '../../services/mic_service.dart';
 import '../../models/song.dart';
+import '../../providers/app_state.dart';
 
 class SingingScreen extends StatefulWidget {
   final PerformanceService? perfService;
@@ -31,6 +32,11 @@ class _SingingScreenState extends State<SingingScreen>
   MicData? _micData;
   bool _micPermissionGranted = false;
   bool _micInitialized = false;
+  final List<double> _recentAmplitudes = [];
+  KaraokeState? _lastKaraokeState;
+  bool _completing = false;
+
+  bool get isMicActive => _micPermissionGranted && _micData != null;
 
   @override
   void initState() {
@@ -40,7 +46,7 @@ class _SingingScreenState extends State<SingingScreen>
       widget.perfService!.stream.listen((state) {
         if (mounted) {
           setState(() => _state = state);
-          if (state.isComplete) widget.onComplete?.call();
+          if (state.isComplete) _finishPerformance(null);
         }
       });
     }
@@ -57,9 +63,34 @@ class _SingingScreenState extends State<SingingScreen>
       _karaoke!.playSimulated();
       _karaokeStream = _karaoke!.stateStream;
 
+      // Start from a clean score slate for this performance.
+      context.read<AppState>().clearLastBreakdown();
+
       // Initialize mic
       _initMic();
     }
+  }
+
+  /// Record the final score breakdown into AppState so CompleteScreen can
+  /// show the real result of this performance.
+  void _finishPerformance(KaraokeState? ks) {
+    final appState = context.read<AppState>();
+    // Amplitude history approximates vocal consistency; energy proxies from
+    // the live mic level when active, otherwise from the simulated baseline.
+    final consistency = _recentAmplitudes.isEmpty
+        ? 75
+        : PitchDetector.scoreTiming(_recentAmplitudes, targetAmplitude: 0.5);
+    final energy = isMicActive && _micData != null
+        ? (_micData!.amplitude * 100).round().clamp(0, 100)
+        : 85;
+    appState.setLastBreakdown(
+      pitch: ks?.pitch ?? 0,
+      timing: ks?.timing ?? 0,
+      consistency: consistency,
+      energy: energy,
+    );
+    appState.updateLiveScore(ks?.score ?? 0);
+    widget.onComplete?.call();
   }
 
   Future<void> _initMic() async {
@@ -77,11 +108,12 @@ class _SingingScreenState extends State<SingingScreen>
       _karaoke!.connectMic(_mic!);
     }
 
-    // Listen to mic data for waveform display
+    // Listen to mic data for waveform display + consistency history
     _mic!.dataStream.listen((data) {
-      if (mounted) {
-        setState(() => _micData = data);
-      }
+      if (!mounted) return;
+      _recentAmplitudes.add(data.amplitude);
+      if (_recentAmplitudes.length > 20) _recentAmplitudes.removeAt(0);
+      setState(() => _micData = data);
     });
   }
 
@@ -102,6 +134,14 @@ class _SingingScreenState extends State<SingingScreen>
         builder: (context, snapshot) {
           final ks = snapshot.data;
           if (ks != null) {
+            _lastKaraokeState = ks;
+            // Song finished -> record the real score before leaving.
+            if (ks.overallProgress >= 1.0 && !_completing) {
+              _completing = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) _finishPerformance(ks);
+              });
+            }
             return _buildFromKaraoke(ks);
           }
           return _buildFallback();
@@ -127,7 +167,6 @@ class _SingingScreenState extends State<SingingScreen>
     // Mic note display
     final micNote = _micData?.note ?? '--';
     final micAmplitude = _micData?.amplitude ?? 0.0;
-    final isMicActive = _micPermissionGranted && _micData != null;
 
     return Scaffold(
       backgroundColor: KColors.ink800,
@@ -332,7 +371,7 @@ class _SingingScreenState extends State<SingingScreen>
             Padding(
               padding: const EdgeInsets.only(bottom: 20),
               child: GestureDetector(
-                onTap: widget.onComplete,
+                onTap: () => _finishPerformance(_lastKaraokeState),
                 child: Text(
                   'End performance \u2192',
                   style: KTypography.uiButton.copyWith(

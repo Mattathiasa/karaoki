@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/cards.dart';
+import '../../providers/app_state.dart';
 
 class CompleteScreen extends StatelessWidget {
   final int score;
@@ -32,6 +34,17 @@ class CompleteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Prefer the real breakdown from the performance that just ended; fall
+    // back to the constructor defaults when there is none (e.g. deep-linked
+    // straight to /complete).
+    final breakdown = context.watch<AppState>().lastBreakdown;
+    final effectiveScore = breakdown?.overall ?? score;
+    final effectivePitch = breakdown?.pitch ?? pitch;
+    final effectiveTiming = breakdown?.timing ?? timing;
+    final effectiveConsistency = breakdown?.consistency ?? consistency;
+    final effectiveEnergy = breakdown?.energy ?? energy;
+    final effectiveNewBest = breakdown == null ? isNewBest : effectiveScore > previousBest;
+
     return Scaffold(
       backgroundColor: KColors.ink800,
       body: SafeArea(
@@ -43,13 +56,13 @@ class CompleteScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 24),
               // Score
-              KScoreBadge(score: score),
+              KScoreBadge(score: effectiveScore),
               const SizedBox(height: 12),
               // Rank
-              const KRankBadge(rank: 'SUPERSTAR'),
+              KRankBadge(rank: effectiveScore >= 90 ? 'SUPERSTAR' : 'GREAT'),
               const SizedBox(height: 12),
               // Personal best
-              if (isNewBest)
+              if (effectiveNewBest)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
@@ -60,7 +73,7 @@ class CompleteScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(KRadius.pill),
                   ),
                   child: Text(
-                    '★ NEW PERSONAL BEST · +${score - previousBest} FROM LAST TIME',
+                    '★ NEW PERSONAL BEST · +${effectiveScore - previousBest} FROM LAST TIME',
                     style: KTypography.monoLabel.copyWith(
                       fontSize: 9,
                       color: KColors.mint,
@@ -70,17 +83,17 @@ class CompleteScreen extends StatelessWidget {
                 ),
               const SizedBox(height: 28),
               // Breakdown
-              _BreakdownBar(label: 'PITCH', value: pitch, color: KColors.mint),
+              _BreakdownBar(label: 'PITCH', value: effectivePitch, color: KColors.mint),
               const SizedBox(height: 10),
-              _BreakdownBar(label: 'TIMING', value: timing, color: KColors.gold),
+              _BreakdownBar(label: 'TIMING', value: effectiveTiming, color: KColors.gold),
               const SizedBox(height: 10),
               _BreakdownBar(
                 label: 'CONSISTENCY',
-                value: consistency,
+                value: effectiveConsistency,
                 color: KColors.teal,
               ),
               const SizedBox(height: 10),
-              _BreakdownBar(label: 'ENERGY', value: energy, color: KColors.lime),
+              _BreakdownBar(label: 'ENERGY', value: effectiveEnergy, color: KColors.lime),
               const SizedBox(height: 32),
               // Actions
               Row(
