@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
@@ -143,29 +144,27 @@ final List<BoardPlayer> players;
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // QR placeholder
+                    // QR code for joining the room (deep link carries the code)
                     Container(
                       width: 200,
                       height: 200,
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: KColors.bone,
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      alignment: Alignment.center,
-                      child: Container(
-                        width: 176,
-                        height: 176,
-                        decoration: BoxDecoration(
+                      child: QrImageView(
+                        data: 'https://zemaoki.app/join/$roomCode',
+                        version: QrVersions.auto,
+                        size: 176,
+                        backgroundColor: KColors.bone,
+                        eyeStyle: const QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
                           color: KColors.ink900,
-                          borderRadius: BorderRadius.circular(16),
                         ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'QR',
-                          style: KTypography.boardMono.copyWith(
-                            fontSize: 24,
-                            color: KColors.bone28,
-                          ),
+                        dataModuleStyle: const QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: KColors.ink900,
                         ),
                       ),
                     ),
