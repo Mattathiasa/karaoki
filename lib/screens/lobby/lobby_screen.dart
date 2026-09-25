@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
@@ -111,6 +112,24 @@ class _LobbyScreenState extends State<LobbyScreen> {
     Navigator.of(context).maybePop();
   }
 
+  /// Route to the screen matching the room's game mode. Non-classic modes
+  /// branch to their dedicated screens; classic falls back to the standard
+  /// turn flow via widget.onStart.
+  void _routeToGameMode(GameMode mode) {
+    switch (mode) {
+      case GameMode.battle:
+        context.go('/battle');
+      case GameMode.team:
+        context.go('/team');
+      case GameMode.duet:
+        context.go('/duet');
+      case GameMode.passTheMic:
+        context.go('/pass-mic');
+      case GameMode.classic:
+        widget.onStart?.call();
+    }
+  }
+
   Future<void> _startGame(AppState appState) async {
     if (_starting) return;
     setState(() => _starting = true);
@@ -122,7 +141,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       }));
       await context.read<RoomService>().startGame(appState.currentRoom!.id);
       if (!mounted) return;
-      widget.onStart?.call();
+      _routeToGameMode(appState.currentRoom?.mode ?? GameMode.classic);
     } catch (_) {
       messenger.showSnackBar(
         const SnackBar(content: Text('Could not start the game. Try again.')),
