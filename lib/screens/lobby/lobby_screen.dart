@@ -74,8 +74,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      KColors.limeTint.withOpacity(0.3),
-                      KColors.tangerine.withOpacity(0.1),
+                      KColors.limeTint.withValues(alpha: 0.3),
+                      KColors.tangerine.withValues(alpha: 0.1),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -238,7 +238,7 @@ class _StatPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: KColors.ink600.withOpacity(0.6),
+        color: KColors.ink600.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(KRadius.pill),
       ),
       child: Row(

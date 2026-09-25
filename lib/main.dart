@@ -76,10 +76,21 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
+  // firebase_options.dart still holds `YOUR_*` placeholder values. Passing
+  // those to the native Firebase SDK raises an uncatchable ObjC exception in
+  // +[FIRApp addAppToAppDictionary:] (invalid API key / app id), which kills
+  // the app before the try/catch below can run. Detect placeholders first and
+  // fall back to the stub services that _isFirebaseConfigured drives.
+  final hasRealFirebaseConfig =
+      !DefaultFirebaseOptions.currentPlatform.apiKey.startsWith('YOUR_');
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    if (hasRealFirebaseConfig) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } else {
+      debugPrint('Firebase config placeholders detected - using stub services');
+    }
 
     // Check if Firebase is actually configured (not placeholder values)
     final db = FirebaseDatabase.instance;

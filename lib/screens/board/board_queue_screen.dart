@@ -37,7 +37,7 @@ final List<QueueEntryBoard> upNext;
           gradient: RadialGradient(
             center: const Alignment(0, -0.5),
             radius: 1.5,
-            colors: [KColors.limeTint.withOpacity(0.2), KColors.ink900],
+            colors: [KColors.limeTint.withValues(alpha: 0.2), KColors.ink900],
           ),
         ),
         child: Row(

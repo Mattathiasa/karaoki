@@ -150,7 +150,7 @@ class _SingingScreenState extends State<SingingScreen>
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: KColors.red.withOpacity(0.2),
+                      color: KColors.red.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(KRadius.pill),
                     ),
                     child: Row(children: [
@@ -176,13 +176,13 @@ class _SingingScreenState extends State<SingingScreen>
                       ),
                       decoration: BoxDecoration(
                         color: isMicActive
-                            ? KColors.lime.withOpacity(0.15)
-                            : KColors.gold.withOpacity(0.15),
+                            ? KColors.lime.withValues(alpha: 0.15)
+                            : KColors.gold.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(KRadius.pill),
                         border: Border.all(
                           color: isMicActive
-                              ? KColors.lime.withOpacity(0.3)
-                              : KColors.gold.withOpacity(0.3),
+                              ? KColors.lime.withValues(alpha: 0.3)
+                              : KColors.gold.withValues(alpha: 0.3),
                           width: 0.5,
                         ),
                       ),
@@ -308,10 +308,10 @@ class _SingingScreenState extends State<SingingScreen>
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: KColors.limeTint.withOpacity(0.2),
+                  color: KColors.limeTint.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(KRadius.tile),
                   border: Border.all(
-                    color: KColors.limeTint.withOpacity(0.3),
+                    color: KColors.limeTint.withValues(alpha: 0.3),
                     width: 0.5,
                   ),
                 ),
@@ -385,7 +385,7 @@ class _SingingScreenState extends State<SingingScreen>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: KColors.red.withOpacity(0.2),
+                      color: KColors.red.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(KRadius.pill),
                     ),
                     child: Row(children: [
@@ -452,10 +452,10 @@ class _SingingScreenState extends State<SingingScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: KColors.limeTint.withOpacity(0.2),
+                  color: KColors.limeTint.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(KRadius.tile),
                   border: Border.all(
-                      color: KColors.limeTint.withOpacity(0.3), width: 0.5),
+                      color: KColors.limeTint.withValues(alpha: 0.3), width: 0.5),
                 ),
                 child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -506,9 +506,9 @@ class _MetricCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(KRadius.tile),
-          border: Border.all(color: color.withOpacity(0.2), width: 0.5),
+          border: Border.all(color: color.withValues(alpha: 0.2), width: 0.5),
         ),
         child: Column(children: [
           Text(label,
@@ -521,7 +521,7 @@ class _MetricCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(sub!,
                 style: KTypography.monoLabel
-                    .copyWith(fontSize: 8, color: color.withOpacity(0.6))),
+                    .copyWith(fontSize: 8, color: color.withValues(alpha: 0.6))),
           ],
         ]),
       ),
@@ -560,7 +560,7 @@ class _MicWaveform extends StatelessWidget {
               height: barHeight,
               margin: const EdgeInsets.symmetric(horizontal: 0.5),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.8),
+                color: color.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(1),
               ),
             );

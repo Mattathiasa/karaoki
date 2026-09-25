@@ -106,7 +106,7 @@ class _BoardCountdownScreenState extends State<BoardCountdownScreen>
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: KColors.lime.withOpacity(ringOpacity),
+                            color: KColors.lime.withValues(alpha: ringOpacity),
                             width: 3,
                           ),
                         ),
@@ -123,7 +123,7 @@ class _BoardCountdownScreenState extends State<BoardCountdownScreen>
                         letterSpacing: -9,
                         shadows: [
                           BoxShadow(
-                            color: KColors.lime.withOpacity(0.5),
+                            color: KColors.lime.withValues(alpha: 0.5),
                             blurRadius: 60,
                             spreadRadius: 20,
                           ),

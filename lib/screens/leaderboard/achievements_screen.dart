@@ -30,9 +30,9 @@ class AchievementsScreen extends StatelessWidget {
               Container(
                 width: double.infinity, padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: KColors.limeTint.withOpacity(0.2),
+                  color: KColors.limeTint.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(KRadius.heroCard),
-                  border: Border.all(color: KColors.limeTint.withOpacity(0.3), width: 0.5),
+                  border: Border.all(color: KColors.limeTint.withValues(alpha: 0.3), width: 0.5),
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('JUST UNLOCKED', style: KTypography.monoLabel.copyWith(fontSize: 9, color: KColors.lime)),
@@ -88,7 +88,7 @@ class _Badge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: unlocked ? KColors.limeTint.withOpacity(0.3) : KColors.ink700,
+        color: unlocked ? KColors.limeTint.withValues(alpha: 0.3) : KColors.ink700,
         borderRadius: BorderRadius.circular(KRadius.tile),
         border: Border.all(color: unlocked ? KColors.limeTint : KColors.hairline, width: 0.5),
       ),

@@ -29,7 +29,7 @@ class KStatusTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: _color.withOpacity(0.1),
+        color: _color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -91,11 +91,11 @@ class _KLiveDotState extends State<KLiveDot>
             width: widget.size,
             height: widget.size,
             decoration: BoxDecoration(
-              color: widget.color.withOpacity(opacity),
+              color: widget.color.withValues(alpha: opacity),
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: widget.color.withOpacity(opacity * 0.65),
+                  color: widget.color.withValues(alpha: opacity * 0.65),
                   blurRadius: 18,
                   spreadRadius: 1,
                 ),
@@ -124,7 +124,7 @@ class KProgressBar extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: KColors.bone.withOpacity(0.12),
+        color: KColors.bone.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: FractionallySizedBox(
@@ -136,7 +136,7 @@ class KProgressBar extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             boxShadow: [
               BoxShadow(
-                color: KColors.lime.withOpacity(0.5),
+                color: KColors.lime.withValues(alpha: 0.5),
                 blurRadius: 10,
                 spreadRadius: 1,
               ),
@@ -226,9 +226,9 @@ class KLevelChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: KColors.gold.withOpacity(0.15),
+        color: KColors.gold.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: KColors.gold.withOpacity(0.3), width: 0.5),
+        border: Border.all(color: KColors.gold.withValues(alpha: 0.3), width: 0.5),
       ),
       child: Text(
         '$label · LV $level',
@@ -258,10 +258,10 @@ class KMicStatus extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: connected ? KColors.mint.withOpacity(0.1) : KColors.red.withOpacity(0.1),
+        color: connected ? KColors.mint.withValues(alpha: 0.1) : KColors.red.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: connected ? KColors.mint.withOpacity(0.3) : KColors.red.withOpacity(0.3),
+          color: connected ? KColors.mint.withValues(alpha: 0.3) : KColors.red.withValues(alpha: 0.3),
           width: 0.5,
         ),
       ),

@@ -253,14 +253,14 @@ class _PodiumColumn extends StatelessWidget {
           height: height,
           decoration: BoxDecoration(
             color: rank == 1
-                ? KColors.gold.withOpacity(0.3)
+                ? KColors.gold.withValues(alpha: 0.3)
                 : KColors.ink600,
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(12),
             ),
             border: Border.all(
               color: rank == 1
-                  ? KColors.gold.withOpacity(0.5)
+                  ? KColors.gold.withValues(alpha: 0.5)
                   : KColors.hairline,
               width: 0.5,
             ),

@@ -83,9 +83,9 @@ class BoardVsScreen extends StatelessWidget {
                                 height: 150,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: KColors.tangerine.withOpacity(0.2),
+                                  color: KColors.tangerine.withValues(alpha: 0.2),
                                   boxShadow: [
-                                    BoxShadow(color: KColors.tangerine.withOpacity(0.4), blurRadius: 70, spreadRadius: 20),
+                                    BoxShadow(color: KColors.tangerine.withValues(alpha: 0.4), blurRadius: 70, spreadRadius: 20),
                                   ],
                                 ),
                               ),
@@ -106,7 +106,7 @@ class BoardVsScreen extends StatelessWidget {
                             style: TextStyle(
                               fontFamily: 'BricolageGrotesque', fontWeight: FontWeight.w800,
                               fontSize: 96, color: KColors.tangerine,
-                              shadows: [BoxShadow(color: KColors.tangerine.withOpacity(0.5), blurRadius: 40, spreadRadius: 10)],
+                              shadows: [BoxShadow(color: KColors.tangerine.withValues(alpha: 0.5), blurRadius: 40, spreadRadius: 10)],
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -144,8 +144,8 @@ class BoardVsScreen extends StatelessWidget {
                                 width: 150, height: 150,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: KColors.teal.withOpacity(0.2),
-                                  boxShadow: [BoxShadow(color: KColors.teal.withOpacity(0.4), blurRadius: 70, spreadRadius: 20)],
+                                  color: KColors.teal.withValues(alpha: 0.2),
+                                  boxShadow: [BoxShadow(color: KColors.teal.withValues(alpha: 0.4), blurRadius: 70, spreadRadius: 20)],
                                 ),
                               ),
                               KAvatar(initial: playerBInitial, size: 150),
@@ -165,7 +165,7 @@ class BoardVsScreen extends StatelessWidget {
                             style: TextStyle(
                               fontFamily: 'BricolageGrotesque', fontWeight: FontWeight.w800,
                               fontSize: 96, color: KColors.teal,
-                              shadows: [BoxShadow(color: KColors.teal.withOpacity(0.5), blurRadius: 40, spreadRadius: 10)],
+                              shadows: [BoxShadow(color: KColors.teal.withValues(alpha: 0.5), blurRadius: 40, spreadRadius: 10)],
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -215,9 +215,9 @@ class _TeamPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.3), width: 0.5),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 0.5),
       ),
       child: Row(
         children: [

@@ -98,7 +98,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: _selectedMode == m.$1 ? KColors.limeTint.withOpacity(0.2) : KColors.ink650,
+                          color: _selectedMode == m.$1 ? KColors.limeTint.withValues(alpha: 0.2) : KColors.ink650,
                           borderRadius: BorderRadius.circular(KRadius.tile),
                           border: Border.all(
                             color: _selectedMode == m.$1 ? KColors.lime : KColors.hairline,

@@ -59,7 +59,7 @@ class QrScreen extends StatelessWidget {
                           height: 2,
                           decoration: BoxDecoration(
                             gradient: KColors.scoreFillGradient,
-                            boxShadow: [BoxShadow(color: KColors.teal.withOpacity(0.5), blurRadius: 8)],
+                            boxShadow: [BoxShadow(color: KColors.teal.withValues(alpha: 0.5), blurRadius: 8)],
                           ),
                         ),
                       ),

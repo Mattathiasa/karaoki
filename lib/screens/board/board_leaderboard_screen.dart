@@ -31,7 +31,7 @@ class BoardLeaderboardScreen extends StatelessWidget {
           gradient: RadialGradient(
             center: const Alignment(0, -0.4),
             radius: 1.5,
-            colors: [KColors.gold.withOpacity(0.12), KColors.ink900],
+            colors: [KColors.gold.withValues(alpha: 0.12), KColors.ink900],
           ),
         ),
         child: Column(
@@ -195,10 +195,10 @@ class _BoardPodiumColumn extends StatelessWidget {
         Container(
           width: 160, height: height,
           decoration: BoxDecoration(
-            color: rank == 1 ? KColors.gold.withOpacity(0.3) : KColors.ink600,
+            color: rank == 1 ? KColors.gold.withValues(alpha: 0.3) : KColors.ink600,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             border: Border.all(
-              color: rank == 1 ? KColors.gold.withOpacity(0.5) : KColors.hairline,
+              color: rank == 1 ? KColors.gold.withValues(alpha: 0.5) : KColors.hairline,
               width: 0.5,
             ),
           ),

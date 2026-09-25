@@ -195,7 +195,7 @@ class KAchievementCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: unlocked ? KColors.limeTint.withOpacity(0.3) : KColors.ink700,
+        color: unlocked ? KColors.limeTint.withValues(alpha: 0.3) : KColors.ink700,
         borderRadius: BorderRadius.circular(KRadius.tile),
         border: Border.all(
           color: unlocked ? KColors.limeTint : KColors.hairline,
@@ -251,7 +251,7 @@ class KLeaderboardRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: isCurrentUser ? KColors.limeTint.withOpacity(0.2) : KColors.ink650,
+        color: isCurrentUser ? KColors.limeTint.withValues(alpha: 0.2) : KColors.ink650,
         borderRadius: BorderRadius.circular(KRadius.tile),
         border: Border.all(
           color: isCurrentUser ? KColors.limeTint : KColors.hairline,
@@ -430,10 +430,10 @@ class KRankBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [_color.withOpacity(0.3), _color.withOpacity(0.1)],
+          colors: [_color.withValues(alpha: 0.3), _color.withValues(alpha: 0.1)],
         ),
         borderRadius: BorderRadius.circular(KRadius.pill),
-        border: Border.all(color: _color.withOpacity(0.5), width: 1),
+        border: Border.all(color: _color.withValues(alpha: 0.5), width: 1),
       ),
       child: Text(
         rank,

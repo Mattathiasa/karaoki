@@ -166,7 +166,7 @@ class _StatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: color == KColors.lime ? KColors.limeTint.withOpacity(0.2) : KColors.ink650,
+          color: color == KColors.lime ? KColors.limeTint.withValues(alpha: 0.2) : KColors.ink650,
           borderRadius: BorderRadius.circular(KRadius.tile),
           border: Border.all(color: KColors.hairline, width: 0.5),
         ),

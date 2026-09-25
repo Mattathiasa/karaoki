@@ -130,13 +130,13 @@ class HomeScreen extends StatelessWidget {
                         begin: Alignment.topRight,
                         end: const Alignment(0.2, 1),
                         colors: [
-                          KColors.limeTint.withOpacity(0.4),
+                          KColors.limeTint.withValues(alpha: 0.4),
                           KColors.ink700,
                         ],
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           blurRadius: 40,
                           offset: const Offset(0, 20),
                           spreadRadius: -22,
@@ -156,10 +156,10 @@ class HomeScreen extends StatelessWidget {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: KColors.mint.withOpacity(0.2),
+                              color: KColors.mint.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(KRadius.pill),
                               border: Border.all(
-                                color: KColors.mint.withOpacity(0.4),
+                                color: KColors.mint.withValues(alpha: 0.4),
                               ),
                             ),
                             child: Row(
@@ -186,7 +186,7 @@ class HomeScreen extends StatelessWidget {
                             height: 66,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),
-                              color: KColors.ink600.withOpacity(0.8),
+                              color: KColors.ink600.withValues(alpha: 0.8),
                               border: Border.all(color: KColors.hairline),
                             ),
                             alignment: Alignment.center,
@@ -245,10 +245,10 @@ class HomeScreen extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: KColors.limeTint.withOpacity(0.2),
+                            color: KColors.limeTint.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(KRadius.tile),
                             border: Border.all(
-                              color: KColors.limeTint.withOpacity(0.3),
+                              color: KColors.limeTint.withValues(alpha: 0.3),
                               width: 0.5,
                             ),
                           ),
@@ -296,10 +296,10 @@ class HomeScreen extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: KColors.teal.withOpacity(0.1),
+                            color: KColors.teal.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(KRadius.tile),
                             border: Border.all(
-                              color: KColors.teal.withOpacity(0.2),
+                              color: KColors.teal.withValues(alpha: 0.2),
                               width: 0.5,
                             ),
                           ),
@@ -310,7 +310,7 @@ class HomeScreen extends StatelessWidget {
                                 width: 38,
                                 height: 38,
                                 decoration: BoxDecoration(
-                                  color: KColors.teal.withOpacity(0.15),
+                                  color: KColors.teal.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 alignment: Alignment.center,
@@ -448,7 +448,7 @@ class HomeScreen extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: KColors.limeTint.withOpacity(0.2),
+                          color: KColors.limeTint.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(KRadius.tile),
                         ),
                         child: Column(
@@ -527,7 +527,7 @@ class _RecentlyPlayedCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(KRadius.tile),
               gradient: LinearGradient(
                 colors: [
-                  KColors.limeTint.withOpacity(0.6),
+                  KColors.limeTint.withValues(alpha: 0.6),
                   KColors.ink700,
                 ],
                 begin: Alignment.topLeft,

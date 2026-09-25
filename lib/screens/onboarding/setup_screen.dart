@@ -152,7 +152,7 @@ class _SetupScreenState extends State<SetupScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: selected ? KColors.limeTint.withOpacity(0.2) : KColors.ink650,
+                        color: selected ? KColors.limeTint.withValues(alpha: 0.2) : KColors.ink650,
                         borderRadius: BorderRadius.circular(KRadius.tile),
                         border: Border.all(
                           color: selected ? KColors.lime : KColors.hairline,

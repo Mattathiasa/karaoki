@@ -67,7 +67,7 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
             center: const Alignment(0, -0.5),
             radius: 1.5,
             colors: [
-              KColors.limeTint.withOpacity(0.2),
+              KColors.limeTint.withValues(alpha: 0.2),
               KColors.ink900,
             ],
           ),
@@ -122,7 +122,7 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: KColors.red.withOpacity(0.2),
+                      color: KColors.red.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Row(
@@ -240,7 +240,7 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: KColors.limeTint.withOpacity(0.2),
+                        color: KColors.limeTint.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(

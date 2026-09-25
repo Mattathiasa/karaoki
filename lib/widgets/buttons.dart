@@ -213,8 +213,8 @@ class KDangerButton extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 17),
         decoration: BoxDecoration(
-          color: KColors.red.withOpacity(0.2),
-          border: Border.all(color: KColors.red.withOpacity(0.4), width: 1),
+          color: KColors.red.withValues(alpha: 0.2),
+          border: Border.all(color: KColors.red.withValues(alpha: 0.4), width: 1),
           borderRadius: BorderRadius.circular(KRadius.pill),
         ),
         alignment: Alignment.center,

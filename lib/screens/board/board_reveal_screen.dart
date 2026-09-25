@@ -43,7 +43,7 @@ class BoardRevealScreen extends StatelessWidget {
             center: const Alignment(0, -0.3),
             radius: 1.5,
             colors: [
-              KColors.gold.withOpacity(0.15),
+              KColors.gold.withValues(alpha: 0.15),
               KColors.ink900,
             ],
           ),
@@ -92,7 +92,7 @@ class BoardRevealScreen extends StatelessWidget {
                         height: 1.0,
                         shadows: [
                           BoxShadow(
-                            color: KColors.gold.withOpacity(0.5),
+                            color: KColors.gold.withValues(alpha: 0.5),
                             blurRadius: 60,
                             spreadRadius: 20,
                           ),
@@ -109,7 +109,7 @@ class BoardRevealScreen extends StatelessWidget {
                           vertical: 10,
                         ),
                         decoration: BoxDecoration(
-                          color: KColors.mint.withOpacity(0.15),
+                          color: KColors.mint.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(KRadius.pill),
                         ),
                         child: Text(
@@ -233,7 +233,7 @@ class _BreakdownRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(999),
                 boxShadow: [
                   BoxShadow(
-                    color: color.withOpacity(0.5),
+                    color: color.withValues(alpha: 0.5),
                     blurRadius: 12,
                     spreadRadius: 1,
                   ),
@@ -267,7 +267,7 @@ class _RankingRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isCurrent ? KColors.limeTint.withOpacity(0.2) : KColors.ink650,
+        color: isCurrent ? KColors.limeTint.withValues(alpha: 0.2) : KColors.ink650,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isCurrent ? KColors.limeTint : KColors.hairline,

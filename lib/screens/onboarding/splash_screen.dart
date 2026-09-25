@@ -14,7 +14,7 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _floatController;
   late AnimationController _ringController;
 
@@ -81,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen>
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: KColors.lime.withOpacity(ringOpacity),
+                              color: KColors.lime.withValues(alpha: ringOpacity),
                               width: 2,
                             ),
                           ),

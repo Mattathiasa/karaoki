@@ -139,7 +139,7 @@ class MicPermissionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black.withOpacity(0.9),
+      backgroundColor: Colors.black.withValues(alpha: 0.9),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: KSpacing.mobilePaddingH),
@@ -208,7 +208,7 @@ class MicLostScreen extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: KColors.red.withOpacity(0.2),
+              color: KColors.red.withValues(alpha: 0.2),
               child: Row(
                 children: [
                   const KLiveDot(color: KColors.red, size: 6),
@@ -302,7 +302,7 @@ class _ReconnectingDotsState extends State<_ReconnectingDots> with SingleTickerP
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 4),
           width: 8, height: 8,
-          decoration: BoxDecoration(color: KColors.bone.withOpacity(opacity), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: KColors.bone.withValues(alpha: opacity), shape: BoxShape.circle),
         );
       }));
     });
@@ -324,7 +324,7 @@ class WeakConnectionScreen extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: KColors.gold.withOpacity(0.2),
+              color: KColors.gold.withValues(alpha: 0.2),
               child: Row(
                 children: [
                   const Icon(Icons.signal_wifi_off, color: KColors.gold, size: 16),
@@ -370,7 +370,7 @@ class WeakConnectionScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: KColors.gold.withOpacity(0.15),
+                color: KColors.gold.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text('◔ WEAK', style: KTypography.monoLabel.copyWith(fontSize: 9, color: KColors.gold)),
@@ -399,9 +399,9 @@ class _WeakMetric extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: KColors.gold.withOpacity(0.1),
+          color: KColors.gold.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(KRadius.tile),
-          border: Border.all(color: KColors.gold.withOpacity(0.2), width: 0.5),
+          border: Border.all(color: KColors.gold.withValues(alpha: 0.2), width: 0.5),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,9 +446,9 @@ class PlayerDroppedScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: KColors.red.withOpacity(0.1),
+                  color: KColors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(KRadius.heroCard),
-                  border: Border.all(color: KColors.red.withOpacity(0.3), width: 1),
+                  border: Border.all(color: KColors.red.withValues(alpha: 0.3), width: 1),
                 ),
                 child: Column(
                   children: [
@@ -808,7 +808,7 @@ class _WaitingDotsState extends State<_WaitingDots> with SingleTickerProviderSta
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 6),
           width: 10, height: 10,
-          decoration: BoxDecoration(color: KColors.lime.withOpacity(opacity), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: KColors.lime.withValues(alpha: opacity), shape: BoxShape.circle),
         );
       }));
     });

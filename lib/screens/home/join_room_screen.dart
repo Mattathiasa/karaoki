@@ -180,7 +180,7 @@ class _NearbyRoom extends StatelessWidget {
           if (!joinable)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: KColors.gold.withOpacity(0.15), borderRadius: BorderRadius.circular(999)),
+              decoration: BoxDecoration(color: KColors.gold.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(999)),
               child: Text('FULL', style: KTypography.monoLabel.copyWith(fontSize: 9, color: KColors.gold)),
             ),
         ],

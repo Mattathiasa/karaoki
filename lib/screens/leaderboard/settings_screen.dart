@@ -31,9 +31,9 @@ class SettingsScreen extends StatelessWidget {
               Container(
                 width: double.infinity, padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: KColors.mint.withOpacity(0.08),
+                  color: KColors.mint.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(KRadius.tile),
-                  border: Border.all(color: KColors.mint.withOpacity(0.2), width: 0.5),
+                  border: Border.all(color: KColors.mint.withValues(alpha: 0.2), width: 0.5),
                 ),
                 child: Row(children: [
                   const Icon(Icons.mic, color: KColors.mint, size: 24),

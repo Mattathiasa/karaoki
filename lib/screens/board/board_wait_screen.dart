@@ -33,7 +33,7 @@ final List<BoardPlayer> players;
             center: const Alignment(0, -0.5),
             radius: 1.5,
             colors: [
-              KColors.limeTint.withOpacity(0.3),
+              KColors.limeTint.withValues(alpha: 0.3),
               KColors.ink900,
             ],
           ),

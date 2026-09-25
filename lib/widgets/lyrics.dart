@@ -28,7 +28,7 @@ class KLyricWidget extends StatelessWidget {
           Text(
             previousLine!,
             style: KTypography.boardLyricNext.copyWith(
-              color: KColors.bone.withOpacity(0.2),
+              color: KColors.bone.withValues(alpha: 0.2),
               fontSize: 15,
             ),
             textAlign: TextAlign.center,
@@ -79,7 +79,7 @@ class KBoardLyricWidget extends StatelessWidget {
           Text(
             previousLine!,
             style: KTypography.boardLyricNext.copyWith(
-              color: KColors.bone.withOpacity(0.2),
+              color: KColors.bone.withValues(alpha: 0.2),
             ),
             textAlign: TextAlign.center,
           ),
@@ -125,7 +125,7 @@ class _WipedLyricLine extends StatelessWidget {
               text,
               style: KTypography.displaySection.copyWith(
                 fontSize: fontSize,
-                color: KColors.bone.withOpacity(0.24),
+                color: KColors.bone.withValues(alpha: 0.24),
               ),
               textAlign: TextAlign.center,
             ),
@@ -201,7 +201,7 @@ class KDuetLyricWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isBoth ? null : (isPartA ? KColors.limeTint : KColors.teal).withOpacity(0.15),
+        color: isBoth ? null : (isPartA ? KColors.limeTint : KColors.teal).withValues(alpha: 0.15),
         border: Border(
           left: BorderSide(
             color: isBoth ? KColors.hairline : borderColor,

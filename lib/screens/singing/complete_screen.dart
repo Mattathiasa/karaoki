@@ -56,7 +56,7 @@ class CompleteScreen extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: KColors.mint.withOpacity(0.15),
+                    color: KColors.mint.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(KRadius.pill),
                   ),
                   child: Text(
@@ -179,7 +179,7 @@ class _BreakdownBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(999),
                 boxShadow: [
                   BoxShadow(
-                    color: color.withOpacity(0.5),
+                    color: color.withValues(alpha: 0.5),
                     blurRadius: 8,
                     spreadRadius: 1,
                   ),

@@ -97,7 +97,7 @@ class _StatTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: highlighted ? KColors.limeTint.withOpacity(0.2) : KColors.ink650,
+        color: highlighted ? KColors.limeTint.withValues(alpha: 0.2) : KColors.ink650,
         borderRadius: BorderRadius.circular(KRadius.tile),
         border: Border.all(color: KColors.hairline, width: 0.5),
       ),

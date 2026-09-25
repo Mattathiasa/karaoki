@@ -47,9 +47,9 @@ class QueueScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: KColors.limeTint.withOpacity(0.15),
+                      color: KColors.limeTint.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(KRadius.tile),
-                      border: Border.all(color: KColors.limeTint.withOpacity(0.3), width: 0.5),
+                      border: Border.all(color: KColors.limeTint.withValues(alpha: 0.3), width: 0.5),
                     ),
                     child: Row(
                       children: [

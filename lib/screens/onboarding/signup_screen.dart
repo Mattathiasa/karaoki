@@ -60,9 +60,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: KColors.mint.withOpacity(0.1),
+                  color: KColors.mint.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(KRadius.tile),
-                  border: Border.all(color: KColors.mint.withOpacity(0.3), width: 0.5),
+                  border: Border.all(color: KColors.mint.withValues(alpha: 0.3), width: 0.5),
                 ),
                 child: Row(
                   children: [

@@ -178,10 +178,10 @@ class _ScreenTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isActive ? KColors.limeTint.withOpacity(0.15) : KColors.ink700,
+          color: isActive ? KColors.limeTint.withValues(alpha: 0.15) : KColors.ink700,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isActive ? KColors.lime.withOpacity(0.4) : KColors.hairline,
+            color: isActive ? KColors.lime.withValues(alpha: 0.4) : KColors.hairline,
             width: 0.5,
           ),
         ),

@@ -59,7 +59,7 @@ class BattleScreen extends StatelessWidget {
                   Expanded(
                     child: Container(
                       width: double.infinity,
-                      color: KColors.red.withOpacity(0.08),
+                      color: KColors.red.withValues(alpha: 0.08),
                       padding: const EdgeInsets.all(20),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -96,7 +96,7 @@ class BattleScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [KColors.red.withOpacity(0.3), KColors.teal.withOpacity(0.3)],
+                        colors: [KColors.red.withValues(alpha: 0.3), KColors.teal.withValues(alpha: 0.3)],
                       ),
                     ),
                     alignment: Alignment.center,
@@ -115,7 +115,7 @@ class BattleScreen extends StatelessWidget {
                   Expanded(
                     child: Container(
                       width: double.infinity,
-                      color: KColors.teal.withOpacity(0.08),
+                      color: KColors.teal.withValues(alpha: 0.08),
                       padding: const EdgeInsets.all(20),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -309,9 +309,9 @@ class TeamScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: KColors.tangerine.withOpacity(0.1),
+                  color: KColors.tangerine.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(KRadius.tile),
-                  border: Border.all(color: KColors.tangerine.withOpacity(0.3), width: 0.5),
+                  border: Border.all(color: KColors.tangerine.withValues(alpha: 0.3), width: 0.5),
                 ),
                 child: Text(
                   'SINGING NOW · TEAM $currentTeam',
@@ -347,7 +347,7 @@ class _TeamCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(KRadius.tile),
       ),
       child: Column(
@@ -419,7 +419,7 @@ class DuetScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: KColors.teal.withOpacity(0.2),
+                      color: KColors.teal.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(KRadius.pill),
                     ),
                     child: Text('B · ${playerBName.toUpperCase()}', style: KTypography.monoLabel.copyWith(fontSize: 9, color: KColors.teal)),
@@ -494,7 +494,7 @@ class _DuetLine extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isBoth ? null : (color ?? KColors.lime).withOpacity(0.12),
+          color: isBoth ? null : (color ?? KColors.lime).withValues(alpha: 0.12),
           border: Border(
             left: BorderSide(
               color: isBoth ? KColors.hairline : (color ?? KColors.lime),
@@ -556,12 +556,12 @@ final List<PassPlayer> players;
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [KColors.limeTint.withOpacity(0.3), KColors.ink650],
+                    colors: [KColors.limeTint.withValues(alpha: 0.3), KColors.ink650],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(KRadius.heroCard),
-                  border: Border.all(color: KColors.limeTint.withOpacity(0.3), width: 0.5),
+                  border: Border.all(color: KColors.limeTint.withValues(alpha: 0.3), width: 0.5),
                 ),
                 child: Column(
                   children: [
@@ -644,9 +644,9 @@ class _PassRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: isNext
-            ? KColors.limeTint.withOpacity(0.2)
+            ? KColors.limeTint.withValues(alpha: 0.2)
             : active
-                ? KColors.teal.withOpacity(0.15)
+                ? KColors.teal.withValues(alpha: 0.15)
                 : KColors.ink650,
         borderRadius: BorderRadius.circular(KRadius.tile),
         border: Border.all(
