@@ -286,7 +286,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
                           } catch (_) {}
                         }
                         appState.leaveRoom();
-                        if (mounted) Navigator.of(context).maybePop();
+                        if (!mounted) return;
+                        Navigator.of(context).maybePop();
                       },
                     ),
                   ),
