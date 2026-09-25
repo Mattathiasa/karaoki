@@ -11,6 +11,7 @@ import '../../widgets/cards.dart';
 import '../../models/room.dart';
 import '../../providers/app_state.dart';
 import '../../services/room_service.dart';
+import '../../services/realtime_sync_service.dart';
 
 class LobbyScreen extends StatefulWidget {
   final VoidCallback? onStart;
@@ -47,6 +48,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
     final room = appState.currentRoom;
     if (room == null) return;
 
+    final sync = context.read<RealtimeSyncService>();
+    // Connect this client to the room's event channel; other phones and the
+    // board receive everything we emit from here.
+    sync.connect(room.id, userId: appState.userId);
+
     final roomService = context.read<RoomService>();
     _roomSub = roomService.watchRoom(room.id).listen((updated) {
       if (mounted) appState.setRoom(updated, isHost: updated.hostId == appState.userId);
@@ -54,6 +60,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
     _playersSub = roomService.watchPlayers(room.id).listen((players) {
       if (mounted) appState.updatePlayers(players);
     });
+  }
+
+  Future<void> _emitEvent(String type, Map<String, dynamic> data) async {
+    try {
+      await context.read<RealtimeSyncService>().sendEvent(
+        SyncEvent(type: type, senderId: context.read<AppState>().userId, data: data),
+      );
+    } catch (_) {
+      // Event bus failures must never block the local game flow.
+    }
   }
 
   @override
@@ -66,7 +82,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
   Future<void> _toggleReady(AppState appState) async {
     final room = appState.currentRoom;
     if (room == null) return;
-    setState(() => _isReady = !_isReady);
+    final nowReady = !_isReady;
+    setState(() => _isReady = nowReady);
+    unawaited(_emitEvent(SyncEventType.playerReady, {
+      'playerId': appState.userId,
+      'ready': nowReady,
+    }));
     try {
       await context.read<RoomService>().toggleReady(room.id, appState.userId);
     } catch (_) {
@@ -78,9 +99,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
     final roomService = context.read<RoomService>();
     final room = appState.currentRoom;
     if (room != null) {
+      unawaited(_emitEvent(SyncEventType.playerLeft, {'playerId': appState.userId}));
       try {
         await roomService.leaveRoom(room.id, appState.userId);
       } catch (_) {}
+      unawaited(context.read<RealtimeSyncService>().disconnect());
     }
     appState.leaveRoom();
     if (!mounted) return;
@@ -92,6 +115,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
     setState(() => _starting = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
+      unawaited(_emitEvent(SyncEventType.gameStarted, {
+        'roomId': appState.currentRoom!.id,
+        'startedBy': appState.userId,
+      }));
       await context.read<RoomService>().startGame(appState.currentRoom!.id);
       if (!mounted) return;
       widget.onStart?.call();

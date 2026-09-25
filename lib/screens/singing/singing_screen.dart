@@ -10,6 +10,7 @@ import '../../widgets/ui_components.dart';
 import '../../services/performance_service.dart';
 import '../../services/karaoke_playback_service.dart';
 import '../../services/mic_service.dart';
+import '../../services/realtime_sync_service.dart';
 import '../../models/song.dart';
 import '../../providers/app_state.dart';
 
@@ -35,6 +36,7 @@ class _SingingScreenState extends State<SingingScreen>
   final List<double> _recentAmplitudes = [];
   KaraokeState? _lastKaraokeState;
   bool _completing = false;
+  int _lastPerfTickMs = 0;
 
   bool get isMicActive => _micPermissionGranted && _micData != null;
 
@@ -90,7 +92,48 @@ class _SingingScreenState extends State<SingingScreen>
       energy: energy,
     );
     appState.updateLiveScore(ks?.score ?? 0);
+
+    // Tell the room (board + other players) this performance is done.
+    final room = appState.currentRoom;
+    if (room != null) {
+      _emitEvent(SyncEventType.performanceComplete, {
+        'roomId': room.id,
+        'singerId': appState.userId,
+        'score': ks?.score ?? 0,
+        'songId': ks?.song.id ?? '',
+      });
+    }
+
     widget.onComplete?.call();
+  }
+
+  /// Throttled perf.tick emitter so the board/other players see live score.
+  void _emitPerfTick(KaraokeState ks) {
+    final appState = context.read<AppState>();
+    final room = appState.currentRoom;
+    if (room == null) return;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastPerfTickMs < 2000) return; // One tick every ~2s.
+    _lastPerfTickMs = now;
+    _emitEvent(SyncEventType.performanceUpdate, {
+      'roomId': room.id,
+      'singerId': appState.userId,
+      'score': ks.score,
+      'pitch': ks.pitch,
+      'timing': ks.timing,
+      'combo': ks.combo,
+      'progress': ks.overallProgress,
+    });
+  }
+
+  Future<void> _emitEvent(String type, Map<String, dynamic> data) async {
+    try {
+      await context.read<RealtimeSyncService>().sendEvent(
+        SyncEvent(type: type, senderId: context.read<AppState>().userId, data: data),
+      );
+    } catch (_) {
+      // Event bus failures must never block the local game flow.
+    }
   }
 
   Future<void> _initMic() async {
@@ -135,6 +178,7 @@ class _SingingScreenState extends State<SingingScreen>
           final ks = snapshot.data;
           if (ks != null) {
             _lastKaraokeState = ks;
+            _emitPerfTick(ks);
             // Song finished -> record the real score before leaving.
             if (ks.overallProgress >= 1.0 && !_completing) {
               _completing = true;
