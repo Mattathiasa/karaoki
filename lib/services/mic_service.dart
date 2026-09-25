@@ -31,7 +31,6 @@ class MicInputService {
   StreamSubscription? _waveDataSubscription;
   StreamSubscription? _stateSubscription;
   Timer? _simTimer;
-  Timer? _pollTimer;
   final _rng = Random();
 
   // Pitch detection state
@@ -95,20 +94,17 @@ class MicInputService {
         ..androidEncoder = AndroidEncoder.aac
         ..androidOutputFormat = AndroidOutputFormat.mpeg4
         ..iosEncoder = IosEncoder.kAudioFormatMPEG4AAC
-        ..sampleRate = 44100;
+        ..sampleRate = 44100
+        // Controller samples dB internally and notifies listeners at this rate.
+        ..updateFrequency = const Duration(milliseconds: 80);
 
       await _recorder!.record();
 
-      // Poll the recorder's latest decibel reading at ~12Hz to feed the
-      // pitch analyzer and the broadcast data stream.
-      _pollTimer?.cancel();
-      _pollTimer = Timer.periodic(const Duration(milliseconds: 80), (_) {
-        if (!_isCapturing || _recorder == null) return;
-        final db = _recorder!.getDecibel();
-        // Normalize dB (roughly -60..0) to a 0.0–1.0 amplitude.
-        final amplitude = ((db + 60) / 60).clamp(0.0, 1.0);
-        _emitFrame(amplitude);
-      });
+      // The controller normalizes peak amplitude into waveData (0.0–1.0) and
+      // calls notifyListeners() at updateFrequency (~12Hz). Listen and feed
+      // the latest sample into the pitch analyzer + broadcast stream.
+      _lastWaveValue = null;
+      _recorder!.addListener(_onRecorderTick);
 
       _isCapturing = true;
       return true;
@@ -116,6 +112,20 @@ class MicInputService {
       _hasPermission = false;
       return false;
     }
+  }
+
+  double? _lastWaveValue;
+
+  /// Called by [RecorderController] whenever a new waveform sample lands.
+  void _onRecorderTick() {
+    final recorder = _recorder;
+    if (recorder == null || !_isCapturing) return;
+    final waves = recorder.waveData;
+    if (waves.isEmpty) return;
+    final latest = waves.last;
+    if (latest == _lastWaveValue) return; // No new sample yet.
+    _lastWaveValue = latest;
+    _emitFrame(latest.clamp(0.0, 1.0));
   }
 
   /// Analyze an amplitude frame and broadcast a [MicData] point.
@@ -164,9 +174,9 @@ class MicInputService {
   Future<void> stopCapture() async {
     _isCapturing = false;
     _simTimer?.cancel();
-    _pollTimer?.cancel();
     _waveDataSubscription?.cancel();
     _stateSubscription?.cancel();
+    _recorder?.removeListener(_onRecorderTick);
 
     try {
       await _recorder?.stop();
@@ -178,9 +188,9 @@ class MicInputService {
 
   void dispose() {
     _simTimer?.cancel();
-    _pollTimer?.cancel();
     _waveDataSubscription?.cancel();
     _stateSubscription?.cancel();
+    _recorder?.removeListener(_onRecorderTick);
     _recorder?.dispose();
     _dataController.close();
     _pitchAnalyzer.reset();
