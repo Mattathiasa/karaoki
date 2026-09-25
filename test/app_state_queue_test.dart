@@ -43,7 +43,7 @@ void main() {
 
       // Remove the cached song mapping by asking for an unknown id directly.
       final resolved = appState.songForEntry(
-        QueueEntry(
+        const QueueEntry(
           entryId: 'e-x',
           songId: 'neon-midnight',
           requestedBy: 'user-1',
