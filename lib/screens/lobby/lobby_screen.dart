@@ -278,10 +278,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     child: KDangerButton(
                       label: 'Leave room',
                       onPressed: () async {
+                        final roomService = context.read<RoomService>();
                         final room = appState.currentRoom;
                         if (room != null) {
                           try {
-                            await context.read<RoomService>().leaveRoom(room.id, appState.userId);
+                            await roomService.leaveRoom(room.id, appState.userId);
                           } catch (_) {}
                         }
                         appState.leaveRoom();
