@@ -385,14 +385,20 @@ final _router = GoRouter(
   ],
 );
 
-class KaraokiApp extends StatefulWidget {
-  const KaraokiApp({super.key});
+/// Bridges app-level services once providers exist in the tree: applies
+/// incoming sync events to AppState, restores the persisted profile, and
+/// keeps it in sync with the signed-in Firebase user when auth is
+/// configured. Lives BELOW MultiProvider so Provider.of resolves.
+class _AppServicesBinder extends StatefulWidget {
+  final Widget child;
+
+  const _AppServicesBinder({required this.child});
 
   @override
-  State<KaraokiApp> createState() => _KaraokiAppState();
+  State<_AppServicesBinder> createState() => _AppServicesBinderState();
 }
 
-class _KaraokiAppState extends State<KaraokiApp> {
+class _AppServicesBinderState extends State<_AppServicesBinder> {
   StreamSubscription<SyncEvent>? _eventSub;
   StreamSubscription<User?>? _authSub;
 
@@ -402,12 +408,12 @@ class _KaraokiAppState extends State<KaraokiApp> {
     if (_eventSub == null) {
       _eventSub = _subscribeAppStateToEvents(context);
 
-      // Restore the persisted profile (stable userId, name, level) and keep
-      // it in sync with the signed-in Firebase user when auth is configured.
       final appState = Provider.of<AppState>(context, listen: false);
       appState.loadProfile();
       if (AppConfig.isFirebaseConfigured) {
-        _authSub = FirebaseAuth.instance.authStateChanges().listen(appState.adoptFirebaseUser);
+        _authSub = FirebaseAuth.instance.authStateChanges().listen(
+          appState.adoptFirebaseUser,
+        );
       }
     }
   }
@@ -418,6 +424,13 @@ class _KaraokiAppState extends State<KaraokiApp> {
     _authSub?.cancel();
     super.dispose();
   }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+class KaraokiApp extends StatelessWidget {
+  const KaraokiApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -453,18 +466,20 @@ class _KaraokiAppState extends State<KaraokiApp> {
               : StubRealtimeSyncService(),
         ),
       ],
-      child: MaterialApp.router(
-        title: 'Zemaoki',
-        debugShowCheckedModeBanner: false,
-        routerConfig: _router,
-        theme: ThemeData(
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: KColors.ink800,
-          colorScheme: const ColorScheme.dark(
-            primary: KColors.lime,
-            secondary: KColors.teal,
-            surface: KColors.ink700,
-            error: KColors.red,
+      child: _AppServicesBinder(
+        child: MaterialApp.router(
+          title: 'Zemaoki',
+          debugShowCheckedModeBanner: false,
+          routerConfig: _router,
+          theme: ThemeData(
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: KColors.ink800,
+            colorScheme: const ColorScheme.dark(
+              primary: KColors.lime,
+              secondary: KColors.teal,
+              surface: KColors.ink700,
+              error: KColors.red,
+            ),
           ),
         ),
       ),
