@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
+import '../../models/room.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
@@ -11,6 +14,7 @@ import '../../widgets/ui_components.dart';
 import '../../services/performance_service.dart';
 import '../../services/karaoke_playback_service.dart';
 import '../../services/mic_service.dart';
+import '../../services/performance_history_service.dart';
 import '../../services/realtime_sync_service.dart';
 import '../../models/song.dart';
 import '../../providers/app_state.dart';
@@ -95,6 +99,27 @@ class _SingingScreenState extends State<SingingScreen>
       energy: energy,
     );
     appState.updateLiveScore(ks?.score ?? 0);
+
+    // Persist the finished performance to history (performances/{id}).
+    unawaited(context.read<PerformanceHistoryService>().savePerformance(
+      PerformanceRecord(
+        songId: ks?.song.id ?? '',
+        songTitle: ks?.song.title ?? 'Unknown song',
+        singerId: appState.userId,
+        score: (ks != null ? ScoreBreakdown(
+          pitch: ks.pitch,
+          timing: ks.timing,
+          consistency: consistency,
+          energy: energy,
+        ).overall : 0),
+        pitch: ks?.pitch ?? 0,
+        timing: ks?.timing ?? 0,
+        consistency: consistency,
+        energy: energy,
+        roomId: appState.currentRoom?.id,
+        performedAt: DateTime.now(),
+      ),
+    ));
 
     // Tell the room (board + other players) this performance is done.
     final room = appState.currentRoom;

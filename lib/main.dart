@@ -12,6 +12,7 @@ import 'theme/colors.dart';
 import 'providers/app_state.dart';
 import 'services/room_service.dart';
 import 'services/performance_service.dart';
+import 'services/performance_history_service.dart';
 import 'services/audio_service.dart';
 import 'services/karaoke_playback_service.dart';
 import 'services/mic_service.dart';
@@ -417,6 +418,9 @@ class _KaraokiAppState extends State<KaraokiApp> {
               : StubRoomService(),
         ),
         Provider<PerformanceService>(create: (_) => PerformanceService()),
+        Provider<PerformanceHistoryService>(
+          create: (_) => PerformanceHistoryService(),
+        ),
         Provider<AudioPlaybackService>(create: (_) => AudioPlaybackService()),
         Provider<KaraokePlaybackService>(
           create: (_) => KaraokePlaybackService(),

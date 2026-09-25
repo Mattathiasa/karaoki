@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
@@ -7,8 +9,9 @@ import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/cards.dart';
 import '../../providers/app_state.dart';
+import '../../services/performance_history_service.dart';
 
-class CompleteScreen extends StatelessWidget {
+class CompleteScreen extends StatefulWidget {
   final int score;
   final int pitch;
   final int timing;
@@ -33,17 +36,29 @@ class CompleteScreen extends StatelessWidget {
   });
 
   @override
+  State<CompleteScreen> createState() => _CompleteScreenState();
+}
+
+class _CompleteScreenState extends State<CompleteScreen> {
+  bool _savedToHistory = false;
+
+  @override
   Widget build(BuildContext context) {
+    // Delegates to the shared build so state changes (saved flag) reflect.
+    return _buildBody(context);
+  }
+
+  Widget _buildBody(BuildContext context) {
     // Prefer the real breakdown from the performance that just ended; fall
     // back to the constructor defaults when there is none (e.g. deep-linked
     // straight to /complete).
     final breakdown = context.watch<AppState>().lastBreakdown;
-    final effectiveScore = breakdown?.overall ?? score;
-    final effectivePitch = breakdown?.pitch ?? pitch;
-    final effectiveTiming = breakdown?.timing ?? timing;
-    final effectiveConsistency = breakdown?.consistency ?? consistency;
-    final effectiveEnergy = breakdown?.energy ?? energy;
-    final effectiveNewBest = breakdown == null ? isNewBest : effectiveScore > previousBest;
+    final effectiveScore = breakdown?.overall ?? widget.score;
+    final effectivePitch = breakdown?.pitch ?? widget.pitch;
+    final effectiveTiming = breakdown?.timing ?? widget.timing;
+    final effectiveConsistency = breakdown?.consistency ?? widget.consistency;
+    final effectiveEnergy = breakdown?.energy ?? widget.energy;
+    final effectiveNewBest = breakdown == null ? widget.isNewBest : effectiveScore > widget.previousBest;
 
     return Scaffold(
       backgroundColor: KColors.ink800,
@@ -73,7 +88,7 @@ class CompleteScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(KRadius.pill),
                   ),
                   child: Text(
-                    '★ NEW PERSONAL BEST · +${effectiveScore - previousBest} FROM LAST TIME',
+                    '★ NEW PERSONAL BEST · +${effectiveScore - widget.previousBest} FROM LAST TIME',
                     style: KTypography.monoLabel.copyWith(
                       fontSize: 9,
                       color: KColors.mint,
@@ -108,9 +123,13 @@ class CompleteScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: KSecondaryButton(
-                      label: 'Save',
-                      icon: const Icon(Icons.save, color: KColors.bone, size: 16),
-                      onPressed: () {},
+                      label: _savedToHistory ? 'Saved ✓' : 'Save',
+                      icon: Icon(
+                        _savedToHistory ? Icons.check_circle : Icons.save,
+                        color: KColors.bone,
+                        size: 16,
+                      ),
+                      onPressed: _savedToHistory ? null : () => _saveToHistory(),
                     ),
                   ),
                 ],
@@ -118,11 +137,11 @@ class CompleteScreen extends StatelessWidget {
               const SizedBox(height: 16),
               KPrimaryButton(
                 label: 'See the leaderboard',
-                onPressed: onLeaderboard,
+                onPressed: widget.onLeaderboard,
               ),
               const SizedBox(height: 12),
               GestureDetector(
-                onTap: onContinue,
+                onTap: widget.onContinue,
                 child: Text(
                   'Continue singing',
                   style: KTypography.uiButton.copyWith(
@@ -138,6 +157,43 @@ class CompleteScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Write this performance to history (performances/{id} in the realtime
+  /// database). No-ops with a notice when persistence is unavailable.
+  Future<void> _saveToHistory() async {
+    final appState = context.read<AppState>();
+    final breakdown = appState.lastBreakdown;
+    if (breakdown == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nothing to save yet.')),
+      );
+      return;
+    }
+    final saved = await context.read<PerformanceHistoryService>().savePerformance(
+      PerformanceRecord(
+        songId: appState.currentSong?.id ?? '',
+        songTitle: appState.currentSong?.title ?? 'Unknown song',
+        singerId: appState.userId,
+        score: breakdown.overall,
+        pitch: breakdown.pitch,
+        timing: breakdown.timing,
+        consistency: breakdown.consistency,
+        energy: breakdown.energy,
+        roomId: appState.currentRoom?.id,
+        performedAt: DateTime.now(),
+      ),
+    );
+    if (!mounted) return;
+    if (saved != null) {
+      setState(() => _savedToHistory = true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('History saving needs Firebase — not configured yet.'),
+        ),
+      );
+    }
   }
 }
 
