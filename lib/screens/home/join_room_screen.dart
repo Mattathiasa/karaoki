@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/ui_components.dart';
+import '../../providers/app_state.dart';
+import '../../services/room_service.dart';
 
 class JoinRoomScreen extends StatefulWidget {
   final VoidCallback? onBack;
@@ -20,11 +23,39 @@ class JoinRoomScreen extends StatefulWidget {
 class _JoinRoomScreenState extends State<JoinRoomScreen> {
   final _codeController = TextEditingController();
   bool _hasError = false;
+  bool _joining = false;
 
   @override
   void dispose() {
     _codeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _join() async {
+    final code = _codeController.text.trim().toUpperCase();
+    if (code.isEmpty) {
+      setState(() => _hasError = true);
+      return;
+    }
+    if (_joining) return;
+
+    setState(() => _joining = true);
+    try {
+      final appState = context.read<AppState>();
+      final roomService = context.read<RoomService>();
+      final room = await roomService.joinRoom(
+        code: code,
+        userId: appState.userId,
+      );
+      appState.setRoom(room, isHost: room.hostId == appState.userId);
+      if (!mounted) return;
+      widget.onJoin?.call();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _hasError = true);
+    } finally {
+      if (mounted) setState(() => _joining = false);
+    }
   }
 
   @override
@@ -91,7 +122,10 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              KPrimaryButton(label: 'Join', onPressed: widget.onJoin),
+              KPrimaryButton(
+                label: _joining ? 'Joining…' : 'Join',
+                onPressed: _joining ? null : _join,
+              ),
               const SizedBox(height: 24),
               // Divider
               Row(
