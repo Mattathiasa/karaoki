@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
@@ -37,6 +38,8 @@ class _SingingScreenState extends State<SingingScreen>
   KaraokeState? _lastKaraokeState;
   bool _completing = false;
   int _lastPerfTickMs = 0;
+  DateTime? _lastMicDataAt;
+  bool _micLostNotified = false;
 
   bool get isMicActive => _micPermissionGranted && _micData != null;
 
@@ -107,6 +110,20 @@ class _SingingScreenState extends State<SingingScreen>
     widget.onComplete?.call();
   }
 
+  /// Detect a microphone that dropped mid-performance: we had data before
+  /// and nothing has arrived for 3 seconds while the song keeps playing.
+  void _checkMicLost(KaraokeState ks) {
+    if (_micLostNotified || !_micInitialized) return;
+    if (_lastMicDataAt == null) return; // Never had mic data (permission denied) - not "lost".
+    if (!ks.isPlaying || ks.overallProgress >= 1.0) return;
+
+    final silentFor = DateTime.now().difference(_lastMicDataAt!);
+    if (silentFor >= const Duration(seconds: 3)) {
+      _micLostNotified = true;
+      context.push('/edge/mic-lost');
+    }
+  }
+
   /// Throttled perf.tick emitter so the board/other players see live score.
   void _emitPerfTick(KaraokeState ks) {
     final appState = context.read<AppState>();
@@ -156,6 +173,7 @@ class _SingingScreenState extends State<SingingScreen>
       if (!mounted) return;
       _recentAmplitudes.add(data.amplitude);
       if (_recentAmplitudes.length > 20) _recentAmplitudes.removeAt(0);
+      _lastMicDataAt = DateTime.now();
       setState(() => _micData = data);
     });
   }
@@ -179,6 +197,7 @@ class _SingingScreenState extends State<SingingScreen>
           if (ks != null) {
             _lastKaraokeState = ks;
             _emitPerfTick(ks);
+            _checkMicLost(ks);
             // Song finished -> record the real score before leaving.
             if (ks.overallProgress >= 1.0 && !_completing) {
               _completing = true;

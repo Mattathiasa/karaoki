@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
@@ -53,6 +54,13 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _hasError = true);
+      // Route to the matching edge screen for full-room / bad-code states.
+      final message = e.toString();
+      if (message.contains('Room is full')) {
+        context.push('/edge/room-full');
+      } else {
+        context.push('/edge/bad-code', extra: code);
+      }
     } finally {
       if (mounted) setState(() => _joining = false);
     }

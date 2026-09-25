@@ -358,8 +358,24 @@ final _router = GoRouter(
     GoRoute(path: '/edge/mic-lost', builder: (ctx, state) => const MicLostScreen()),
     GoRoute(path: '/edge/weak-connection', builder: (ctx, state) => const WeakConnectionScreen()),
     GoRoute(path: '/edge/player-dropped', builder: (ctx, state) => const PlayerDroppedScreen()),
-    GoRoute(path: '/edge/room-full', builder: (ctx, state) => const RoomFullScreen()),
-    GoRoute(path: '/edge/bad-code', builder: (ctx, state) => const BadCodeScreen()),
+    GoRoute(
+      path: '/edge/room-full',
+      builder: (ctx, state) => RoomFullScreen(
+        onSpectate: () => ctx.go('/home'),
+      ),
+    ),
+    GoRoute(
+      path: '/edge/bad-code',
+      builder: (ctx, state) {
+        final code = state.uri.queryParameters['code'] ??
+            (state.extra is String ? state.extra as String : '');
+        return BadCodeScreen(
+          code: code,
+          onTryAgain: () => ctx.go('/join-room'),
+          onScan: () => ctx.go('/qr'),
+        );
+      },
+    ),
     GoRoute(path: '/edge/unavailable', builder: (ctx, state) => const UnavailableSongScreen()),
     GoRoute(path: '/edge/no-history', builder: (ctx, state) => const NoHistoryScreen()),
     GoRoute(path: '/edge/no-badges', builder: (ctx, state) => const NoBadgesScreen()),
