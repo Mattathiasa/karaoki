@@ -1,21 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
+import '../../models/room.dart';
 import '../../models/song.dart';
+import '../../providers/app_state.dart';
+import '../../services/realtime_sync_service.dart';
+import '../../services/room_service.dart';
 
 class DetailsScreen extends StatelessWidget {
-  final Song? song;
+  final String? songId;
   final VoidCallback? onBack;
   final VoidCallback? onAddToQueue;
 
-  const DetailsScreen({super.key, this.song, this.onBack, this.onAddToQueue});
+  const DetailsScreen({super.key, this.songId, this.onBack, this.onAddToQueue});
 
   @override
   Widget build(BuildContext context) {
-    final s = song ?? fixtureSongs.first;
+    final s = songId == null
+        ? fixtureSongs.first
+        : fixtureSongs.firstWhere(
+            (song) => song.id == songId,
+            orElse: () => fixtureSongs.first,
+          );
     return Scaffold(
       backgroundColor: KColors.ink800,
       body: SingleChildScrollView(
@@ -105,7 +117,10 @@ class DetailsScreen extends StatelessWidget {
             // Actions
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: KSpacing.mobilePaddingH),
-              child: KPrimaryButton(label: 'Add to queue', onPressed: onAddToQueue),
+              child: KPrimaryButton(
+                label: 'Add to queue',
+                onPressed: () => _addToQueue(context, s),
+              ),
             ),
             const SizedBox(height: 12),
             Padding(
@@ -131,6 +146,57 @@ class DetailsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Persist the song to the room's queue via RoomService, mirror it into
+  /// AppState for instant UI update, and broadcast song_added to the room.
+  Future<void> _addToQueue(BuildContext context, Song song) async {
+    final appState = context.read<AppState>();
+    final room = appState.currentRoom;
+    final messenger = ScaffoldMessenger.of(context);
+    final roomService = context.read<RoomService>();
+    final sync = context.read<RealtimeSyncService>();
+
+    if (room != null) {
+      try {
+        await roomService.addSong(
+          room.id,
+          song.id,
+          appState.userId,
+        );
+      } catch (e) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Could not add "${song.title}" to the queue.')),
+        );
+        return;
+      }
+      // Tell the board and other players a song was queued.
+      unawaited(sync.sendEvent(SyncEvent(
+        type: SyncEventType.songAdded,
+        senderId: appState.userId,
+        data: {
+          'roomId': room.id,
+          'songId': song.id,
+          'songTitle': song.title,
+          'requestedBy': appState.userId,
+        },
+      )).catchError((_) {
+        // Event bus failures must never block the local flow.
+      }));
+    }
+
+    if (!context.mounted) return;
+    final position = appState.queue.length + 1;
+    appState.addToQueue(
+      QueueEntry(
+        entryId: 'entry-${DateTime.now().millisecondsSinceEpoch}',
+        songId: song.id,
+        requestedBy: appState.userId,
+        position: position,
+      ),
+      song,
+    );
+    onAddToQueue?.call();
   }
 }
 

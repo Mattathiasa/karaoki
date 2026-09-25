@@ -267,9 +267,13 @@ final _router = GoRouter(
         ),
         GoRoute(
           path: '/details',
-          builder: (ctx, state) => DetailsScreen(
-            onAddToQueue: () => ctx.go('/queue'),
-          ),
+          builder: (ctx, state) {
+            final songId = state.extra is String ? state.extra as String : null;
+            return DetailsScreen(
+              songId: songId,
+              onAddToQueue: () => ctx.go('/queue'),
+            );
+          },
         ),
         GoRoute(
           path: '/queue',

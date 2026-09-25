@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
@@ -167,8 +168,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     difficulty: song.difficulty,
                     duration: song.durationLabel,
                     artSize: 56,
-                    onTap: widget.onSongSelected,
-                    onAdd: () {},
+                    onTap: () => context.go('/details', extra: song.id),
+                    onAdd: () => context.go('/details', extra: song.id),
                   );
                 },
               ),
