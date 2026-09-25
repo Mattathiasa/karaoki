@@ -173,7 +173,10 @@ class KaraokePlaybackService {
     }
 
     // Score pitch against the target note from the song's melody
-    final targetHz = _noteTrack?.hzAt(_current.overallProgress.round() * 100) ?? 440;
+    // overallProgress is 0.0–1.0; hzAt expects a 0–100 percentage, so scale
+    // FIRST and round AFTER — rounding before scaling collapses the value to
+    // 0 or 100, making every mid-song note compare against the first/last note.
+    final targetHz = _noteTrack?.hzAt((_current.overallProgress * 100).round()) ?? 440;
     final pitchScore = PitchDetector.scorePitch(data.hz, targetHz);
 
     // Score timing based on amplitude consistency
