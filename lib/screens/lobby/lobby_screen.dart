@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
@@ -6,7 +8,9 @@ import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/cards.dart';
+import '../../models/room.dart';
 import '../../providers/app_state.dart';
+import '../../services/room_service.dart';
 
 class LobbyScreen extends StatefulWidget {
   final VoidCallback? onStart;
@@ -24,6 +28,68 @@ class LobbyScreen extends StatefulWidget {
 
 class _LobbyScreenState extends State<LobbyScreen> {
   bool _isReady = false;
+  StreamSubscription<Room>? _roomSub;
+  StreamSubscription<List<Player>>? _playersSub;
+  bool _starting = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_roomSub == null) {
+      _subscribeToRoom();
+    }
+  }
+
+  /// Subscribe to the live room and player streams for the current room so
+  /// joins/reads/status changes from other devices show up in the lobby.
+  void _subscribeToRoom() {
+    final appState = context.read<AppState>();
+    final room = appState.currentRoom;
+    if (room == null) return;
+
+    final roomService = context.read<RoomService>();
+    _roomSub = roomService.watchRoom(room.id).listen((updated) {
+      if (mounted) appState.setRoom(updated, isHost: updated.hostId == appState.userId);
+    });
+    _playersSub = roomService.watchPlayers(room.id).listen((players) {
+      if (mounted) appState.updatePlayers(players);
+    });
+  }
+
+  @override
+  void dispose() {
+    _roomSub?.cancel();
+    _playersSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _toggleReady(AppState appState) async {
+    final room = appState.currentRoom;
+    if (room == null) return;
+    setState(() => _isReady = !_isReady);
+    try {
+      await context.read<RoomService>().toggleReady(room.id, appState.userId);
+    } catch (_) {
+      // Keep the local toggle; the player stream will reconcile.
+    }
+  }
+
+  Future<void> _startGame(AppState appState) async {
+    if (_starting) return;
+    setState(() => _starting = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await context.read<RoomService>().startGame(appState.currentRoom!.id);
+      if (!mounted) return;
+      widget.onStart?.call();
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not start the game. Try again.')),
+      );
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -196,13 +262,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
                   // Start game (host only)
                   if (isHost)
                     KPrimaryButton(
-                      label: 'Start game',
-                      onPressed: widget.onStart,
+                      label: _starting ? 'Starting…' : 'Start game',
+                      onPressed: _starting ? null : () => _startGame(appState),
                     ),
                   if (!isHost) ...[
                     KPrimaryButton(
                       label: _isReady ? 'Cancel ready' : 'Ready up',
-                      onPressed: () => setState(() => _isReady = !_isReady),
+                      onPressed: () => _toggleReady(appState),
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -211,9 +277,15 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     padding: const EdgeInsets.only(top: 12),
                     child: KDangerButton(
                       label: 'Leave room',
-                      onPressed: () {
+                      onPressed: () async {
+                        final room = appState.currentRoom;
+                        if (room != null) {
+                          try {
+                            await context.read<RoomService>().leaveRoom(room.id, appState.userId);
+                          } catch (_) {}
+                        }
                         appState.leaveRoom();
-                        Navigator.of(context).maybePop();
+                        if (mounted) Navigator.of(context).maybePop();
                       },
                     ),
                   ),
