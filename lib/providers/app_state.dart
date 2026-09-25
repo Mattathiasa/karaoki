@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/room.dart';
 import '../models/song.dart';
 import '../services/realtime_sync_service.dart';
@@ -7,7 +9,7 @@ import '../services/realtime_sync_service.dart';
 /// Holds room state, player identity, queue, and game flow
 class AppState extends ChangeNotifier {
   // ─── User Identity ─────────────────────────────
-  final String _userId = 'user-${DateTime.now().millisecondsSinceEpoch}';
+  String _userId = 'user-${DateTime.now().millisecondsSinceEpoch}';
   String _userName = 'Player';
   final String _userAvatar = '';
   int _userLevel = 1;
@@ -17,13 +19,53 @@ class AppState extends ChangeNotifier {
   String get userAvatar => _userAvatar;
   int get userLevel => _userLevel;
 
+  /// Load the persisted profile (userId, name, level) from local storage.
+  /// Call once at startup; userId survives restarts so rooms/identity are
+  /// stable, and name/level set in onboarding are not lost.
+  Future<void> loadProfile() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storedId = prefs.getString('userId');
+      if (storedId != null && storedId.isNotEmpty) {
+        _userId = storedId;
+      } else {
+        await prefs.setString('userId', _userId);
+      }
+      final storedName = prefs.getString('userName');
+      if (storedName != null && storedName.isNotEmpty) {
+        _userName = storedName;
+      }
+      _userLevel = prefs.getInt('userLevel') ?? _userLevel;
+      notifyListeners();
+    } catch (e) {
+      // Persistence unavailable (first run on a locked-down platform):
+      // keep in-memory defaults rather than failing startup.
+      debugPrint('AppState.loadProfile: $e');
+    }
+  }
+
   void setUserName(String name) {
     _userName = name;
+    SharedPreferences.getInstance().then((p) => p.setString('userName', name));
     notifyListeners();
   }
 
   void setUserLevel(int level) {
     _userLevel = level;
+    SharedPreferences.getInstance().then((p) => p.setInt('userLevel', level));
+    notifyListeners();
+  }
+
+  /// Sync the authenticated Firebase user's identity into the profile so
+  /// userId matches across devices and the display name is kept.
+  void adoptFirebaseUser(User? user) {
+    if (user == null) return;
+    _userId = user.uid;
+    final name = user.displayName;
+    if (name != null && name.isNotEmpty) {
+      _userName = name;
+      SharedPreferences.getInstance().then((p) => p.setString('userName', name));
+    }
     notifyListeners();
   }
 

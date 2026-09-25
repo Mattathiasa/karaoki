@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -393,16 +394,28 @@ class KaraokiApp extends StatefulWidget {
 
 class _KaraokiAppState extends State<KaraokiApp> {
   StreamSubscription<SyncEvent>? _eventSub;
+  StreamSubscription<User?>? _authSub;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _eventSub ??= _subscribeAppStateToEvents(context);
+    if (_eventSub == null) {
+      _eventSub = _subscribeAppStateToEvents(context);
+
+      // Restore the persisted profile (stable userId, name, level) and keep
+      // it in sync with the signed-in Firebase user when auth is configured.
+      final appState = Provider.of<AppState>(context, listen: false);
+      appState.loadProfile();
+      if (AppConfig.isFirebaseConfigured) {
+        _authSub = FirebaseAuth.instance.authStateChanges().listen(appState.adoptFirebaseUser);
+      }
+    }
   }
 
   @override
   void dispose() {
     _eventSub?.cancel();
+    _authSub?.cancel();
     super.dispose();
   }
 
