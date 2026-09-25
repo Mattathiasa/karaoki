@@ -212,6 +212,7 @@ final _router = GoRouter(
           path: '/create-room',
           builder: (ctx, state) => CreateRoomScreen(
             onCreate: () => ctx.go('/lobby'),
+            onBack: () => ctx.go('/home'),
           ),
         ),
         GoRoute(
@@ -219,6 +220,7 @@ final _router = GoRouter(
           builder: (ctx, state) => JoinRoomScreen(
             onJoin: () => ctx.go('/lobby'),
             onScan: () => ctx.go('/qr'),
+            onBack: () => ctx.go('/home'),
           ),
         ),
         GoRoute(

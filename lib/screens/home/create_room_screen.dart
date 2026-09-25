@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
+import '../../models/room.dart';
+import '../../providers/app_state.dart';
+import '../../services/room_service.dart';
 
 class CreateRoomScreen extends StatefulWidget {
   final VoidCallback? onCreate;
@@ -22,6 +26,15 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   final String _visibility = 'Private';
   final String _category = 'Party';
   final String _difficulty = 'Mixed';
+  bool _creating = false;
+
+  static const _modeApiNames = {
+    'Classic': GameMode.classic,
+    'Battle': GameMode.battle,
+    'Team': GameMode.team,
+    'Duet': GameMode.duet,
+    'Pass the Mic': GameMode.passTheMic,
+  };
 
   static const _modes = [
     ('Classic', 'Icons.queue_music', 'One singer at a time, queue order'),
@@ -35,6 +48,47 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   void dispose() {
     _nameController.dispose();
     super.dispose();
+  }
+
+  Future<void> _create() async {
+    if (_creating) return;
+    setState(() => _creating = true);
+    try {
+      final appState = context.read<AppState>();
+      final roomService = context.read<RoomService>();
+      final room = await roomService.createRoom(
+        name: _nameController.text.trim().isEmpty
+            ? 'Friday Night Fire'
+            : _nameController.text.trim(),
+        hostId: appState.userId,
+        mode: _modeApiNames[_selectedMode] ?? GameMode.classic,
+        maxPlayers: _maxPlayers,
+      );
+      appState.setRoom(room, isHost: true);
+      appState.updatePlayers([
+        Player(
+          id: appState.userId,
+          name: appState.userName,
+          level: appState.userLevel,
+          ready: true,
+        ),
+      ]);
+      if (!mounted) return;
+      widget.onCreate?.call();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: KColors.red,
+          content: Text(
+            'Could not create room: $e',
+            style: KTypography.monoLabel.copyWith(fontSize: 11),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _creating = false);
+    }
   }
 
   @override
@@ -165,7 +219,10 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
               padding: const EdgeInsets.fromLTRB(
                 KSpacing.mobilePaddingH, 0, KSpacing.mobilePaddingH, 20,
               ),
-              child: KPrimaryButton(label: 'Create room & open board', onPressed: widget.onCreate),
+              child: KPrimaryButton(
+                label: _creating ? 'Creating room…' : 'Create room & open board',
+                onPressed: _creating ? null : _create,
+              ),
             ),
           ],
         ),
