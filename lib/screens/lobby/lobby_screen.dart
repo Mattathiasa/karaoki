@@ -74,6 +74,19 @@ class _LobbyScreenState extends State<LobbyScreen> {
     }
   }
 
+  Future<void> _leaveRoom(AppState appState) async {
+    final roomService = context.read<RoomService>();
+    final room = appState.currentRoom;
+    if (room != null) {
+      try {
+        await roomService.leaveRoom(room.id, appState.userId);
+      } catch (_) {}
+    }
+    appState.leaveRoom();
+    if (!mounted) return;
+    Navigator.of(context).maybePop();
+  }
+
   Future<void> _startGame(AppState appState) async {
     if (_starting) return;
     setState(() => _starting = true);
@@ -277,18 +290,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     padding: const EdgeInsets.only(top: 12),
                     child: KDangerButton(
                       label: 'Leave room',
-                      onPressed: () async {
-                        final roomService = context.read<RoomService>();
-                        final room = appState.currentRoom;
-                        if (room != null) {
-                          try {
-                            await roomService.leaveRoom(room.id, appState.userId);
-                          } catch (_) {}
-                        }
-                        appState.leaveRoom();
-                        if (!mounted) return;
-                        Navigator.of(context).maybePop();
-                      },
+                      onPressed: () => _leaveRoom(appState),
                     ),
                   ),
                 ],
