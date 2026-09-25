@@ -4,20 +4,48 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/room.dart';
 import '../models/song.dart';
 import '../services/realtime_sync_service.dart';
+import '../services/auth_service.dart';
 
 /// Central app state managed by Provider
 /// Holds room state, player identity, queue, and game flow
 class AppState extends ChangeNotifier {
+  AppState(this._auth) {
+    _auth.addListener(_onAuthChanged);
+    _onAuthChanged();
+  }
+
+  final AuthService _auth;
+
+  void _onAuthChanged() {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    if (_userId == user.uid) {
+      _isGuest = user.isAnonymous;
+      return;
+    }
+    _userId = user.uid;
+    _userName = user.effectiveName;
+    _isGuest = user.isAnonymous;
+    // Keep the persisted profile in sync with the authenticated identity.
+    SharedPreferences.getInstance().then((p) {
+      p.setString('userId', _userId);
+      p.setString('userName', _userName);
+    });
+    notifyListeners();
+  }
+
   // ─── User Identity ─────────────────────────────
   String _userId = 'user-${DateTime.now().millisecondsSinceEpoch}';
   String _userName = 'Player';
   final String _userAvatar = '';
   int _userLevel = 1;
+  bool _isGuest = true;
 
   String get userId => _userId;
   String get userName => _userName;
   String get userAvatar => _userAvatar;
   int get userLevel => _userLevel;
+  bool get isGuest => _isGuest;
 
   /// Load the persisted profile (userId, name, level) from local storage.
   /// Call once at startup; userId survives restarts so rooms/identity are
@@ -163,6 +191,9 @@ class AppState extends ChangeNotifier {
     _lastBreakdown = null;
     notifyListeners();
   }
+
+  // ─── Auth passthrough ──────────────────────────
+  AuthService get auth => _auth;
 
   // ─── Board Mode ────────────────────────────────
   bool _isBoardMode = false;

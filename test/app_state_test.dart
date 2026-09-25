@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:karaoki/models/room.dart';
 import 'package:karaoki/providers/app_state.dart';
+import 'package:karaoki/services/auth_service.dart';
 import 'package:karaoki/services/realtime_sync_service.dart';
 
 void main() {
@@ -69,7 +70,9 @@ void main() {
     late AppState appState;
 
     setUp(() {
-      appState = AppState();
+      // AuthService construction is Firebase-free (lazy _auth); no init() is
+      // called, so the AppState under test stays fully local.
+      appState = AppState(AuthService());
       appState.updatePlayers([
         const Player(id: 'a', name: 'Ada'),
         const Player(id: 'b', name: 'Ben'),

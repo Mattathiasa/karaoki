@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
+import 'package:crypto/crypto.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../models/room.dart';
 import 'room_service.dart';
@@ -57,7 +59,7 @@ class FirebaseRoomService implements RoomService {
     // Add host as first player
     final hostPlayer = Player(
       id: hostId,
-      name: 'Host',
+      name: _sanitizeName('Host'),
       level: 1,
       ready: true,
       connected: true,
@@ -97,29 +99,42 @@ class FirebaseRoomService implements RoomService {
     final playersSnapshot = await _playersRef(roomId).get();
     final playerCount = playersSnapshot.children.length;
     if (playerCount >= room.maxPlayers) {
-      throw Exception('Room is full');
+      // Allow reconnects even at capacity: if this user is already in the
+      // room, the transaction below will succeed.
+      final alreadyInRoom =
+          playersSnapshot.children.any((c) => c.key == userId);
+      if (!alreadyInRoom) {
+        throw Exception('Room is full');
+      }
     }
 
-    // Check if player already in room
-    final existingPlayer = await _playersRef(roomId).child(userId).get();
-    if (existingPlayer.exists) {
-      // Player reconnecting, just update presence
-      await _presenceRef(roomId, userId).set({
-        'online': true,
-        'lastSeen': ServerValue.timestamp,
-      });
-      return room;
-    }
+    // Add player atomically: transaction guards the capacity check so
+    // concurrent joins cannot exceed maxPlayers.
+    final result = await _playersRef(roomId).child(userId)
+        .runTransaction((current) {
+      if (current != null) {
+        // Player reconnecting, just update presence below.
+        return Transaction.success(current);
+      }
+      if (playerCount >= room.maxPlayers) {
+        return Transaction.abort();
+      }
+      final player = Player(
+        id: userId,
+        name: _sanitizeName('Player ${playerCount + 1}'),
+        level: 1,
+        ready: false,
+        connected: true,
+      );
+      return Transaction.success(player.toJson());
+    });
 
-    // Add player
-    final player = Player(
-      id: userId,
-      name: 'Player $playerCount',
-      level: 1,
-      ready: false,
-      connected: true,
-    );
-    await _playersRef(roomId).child(userId).set(player.toJson());
+    if (!result.committed) {
+      if (playerCount >= room.maxPlayers) {
+        throw Exception('Room is full');
+      }
+      throw Exception('Failed to join room');
+    }
 
     // Set presence
     await _presenceRef(roomId, userId).set({
@@ -244,7 +259,11 @@ class FirebaseRoomService implements RoomService {
   // ─── Update Performance ──────────────────────────
   @override
   Future<void> updatePerformance(String roomId, String singerId, int score) async {
-    await _playersRef(roomId).child(singerId).update({'score': score});
+    // Clamp to the legal range so a buggy or malicious client cannot push
+    // arbitrary values into the leaderboard. Final authority is the server
+    // (see database.rules.json, which rejects direct client writes to score).
+    final clamped = score.clamp(0, 100).toInt();
+    await _playersRef(roomId).child(singerId).update({'score': clamped});
   }
 
   // ─── Advance Turn ────────────────────────────────
@@ -308,6 +327,17 @@ class FirebaseRoomService implements RoomService {
     return controller.stream;
   }
 
+  // ─── Sanitization ─────────────────────────────
+  /// Strip control characters and length-cap display names before they
+  /// reach the database or get rendered on the board.
+  static String _sanitizeName(String raw, {int maxLength = 24}) {
+    final cleaned = raw
+        .replaceAll(RegExp(r'[\u0000-\u001F\u007F]'), '')
+        .trim();
+    if (cleaned.isEmpty) return 'Player';
+    return cleaned.length <= maxLength ? cleaned : cleaned.substring(0, maxLength);
+  }
+
   // ─── Helpers ─────────────────────────────────────
   Future<int> _getNextQueuePosition(String roomId) async {
     final snapshot = await _queueRef(roomId).orderByChild('position').get();
@@ -322,13 +352,21 @@ class FirebaseRoomService implements RoomService {
   }
 
   Future<String> _generateUniqueCode() async {
-    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // removed I/O to avoid confusion
-    final rng = Random();
+    // Cryptographically random: 3 letters + 4 digits from a secure RNG,
+    // with I/O removed to avoid confusion. ~96M combinations (vs 280k
+    // for letters-only) and no Random()-predictability.
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const digits = '23456789'; // removed 0/1 to avoid confusion
+    final secure = Random.secure();
 
     for (int attempt = 0; attempt < 10; attempt++) {
       String code = 'KARA-';
+      for (int i = 0; i < 3; i++) {
+        code += letters[secure.nextInt(letters.length)];
+      }
+      code += '-';
       for (int i = 0; i < 4; i++) {
-        code += letters[rng.nextInt(letters.length)];
+        code += digits[secure.nextInt(digits.length)];
       }
 
       // Check if code is already in use
@@ -338,8 +376,11 @@ class FirebaseRoomService implements RoomService {
       }
     }
 
-    // Fallback: use timestamp-based code
-    return 'KARA-${DateTime.now().millisecondsSinceEpoch % 10000}'.padRight(9, '0');
+    // Fallback: hash-derived code (not predictable from the timestamp alone)
+    final seed =
+        '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}';
+    final digest = md5.convert(utf8.encode(seed)).toString();
+    return 'KARA-${digest.substring(0, 4).toUpperCase()}';
   }
 
   Future<void> _cleanupRoom(String roomId) async {

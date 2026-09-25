@@ -35,6 +35,9 @@ dependencies:
   # Unique IDs
   uuid: ^4.2.1
 
+  # Secure room code generation
+  crypto: ^3.0.3
+
   # Path provider
   path_provider: ^2.1.2
 

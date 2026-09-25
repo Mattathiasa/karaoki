@@ -341,6 +341,24 @@ class PitchDetector {
     return (45 - (semitoneDiff - 2.0) * 10).round().clamp(0, 45);
   }
 
+  /// Score pitch against a song's expected vocal range without a reference
+  /// melody: silence scores 0, anything inside a typical singing window
+  /// (80–1000 Hz) scores by musicality, and out-of-range noise decays.
+  ///
+  /// This is the no-reference-melody fallback; when a song carries a
+  /// reference pitch track, use [scorePitch] against it instead.
+  static int scorePitchAgainstRange(double actualHz) {
+    if (actualHz <= 30) return 0; // silence / handling noise
+    if (actualHz < 80 || actualHz > 1000) return 20; // outside vocal range
+
+    // Map onto the semitone curve anchored at A4 (440 Hz).
+    final semitoneDiff = 12 * (log(actualHz / 440).abs() / log(2));
+    if (semitoneDiff < 0.5) return 85; // near A4
+    if (semitoneDiff < 1.0) return 75;
+    if (semitoneDiff < 2.0) return 65;
+    return 55; // in range but far from centre
+  }
+
   /// Score timing accuracy based on amplitude consistency.
   /// Returns 0–100 where 100 is perfectly on beat.
   static int scoreTiming(List<double> recentAmplitudes, {double targetAmplitude = 0.6}) {

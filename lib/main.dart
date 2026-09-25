@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'firebase_options.dart';
 import 'theme/colors.dart';
 import 'providers/app_state.dart';
+import 'services/auth_service.dart';
 import 'services/room_service.dart';
 import 'services/performance_service.dart';
 import 'services/performance_history_service.dart';
@@ -108,6 +109,13 @@ void main() async {
       // Use persistent connection for real-time sync
       db.setPersistenceEnabled(true);
       db.setPersistenceCacheSizeBytes(10 * 1024 * 1024); // 10MB
+
+      // Enable anonymous + email auth for real identity
+      try {
+        await FirebaseAuth.instance.signInAnonymously();
+      } catch (_) {
+        // Anonymous auth may be disabled; screens will surface the error
+      }
     }
   } catch (e) {
     // Firebase not configured, fall back to stubs
@@ -400,28 +408,21 @@ class _AppServicesBinder extends StatefulWidget {
 
 class _AppServicesBinderState extends State<_AppServicesBinder> {
   StreamSubscription<SyncEvent>? _eventSub;
-  StreamSubscription<User?>? _authSub;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_eventSub == null) {
+      // Pipe incoming realtime events into AppState. Auth identity is handled
+      // inside AppState via its injected AuthService listener.
       _eventSub = _subscribeAppStateToEvents(context);
-
-      final appState = Provider.of<AppState>(context, listen: false);
-      appState.loadProfile();
-      if (AppConfig.isFirebaseConfigured) {
-        _authSub = FirebaseAuth.instance.authStateChanges().listen(
-          appState.adoptFirebaseUser,
-        );
-      }
+      Provider.of<AppState>(context, listen: false).loadProfile();
     }
   }
 
   @override
   void dispose() {
     _eventSub?.cancel();
-    _authSub?.cancel();
     super.dispose();
   }
 
@@ -436,7 +437,10 @@ class KaraokiApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AppState()),
+        ChangeNotifierProvider(create: (_) => AuthService()..init()),
+        ChangeNotifierProvider(
+          create: (ctx) => AppState(ctx.read<AuthService>()),
+        ),
         // Use Firebase services if configured, otherwise stubs
         Provider<RoomService>(
           create: (_) => _isFirebaseConfigured
