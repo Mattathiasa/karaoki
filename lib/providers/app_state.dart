@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/room.dart';
 import '../models/song.dart';
+import '../services/realtime_sync_service.dart';
 
 /// Central app state managed by Provider
 /// Holds room state, player identity, queue, and game flow
@@ -136,6 +137,67 @@ class AppState extends ChangeNotifier {
 
   void setConnectionStatus(ConnectionStatus status) {
     _connectionStatus = status;
+    notifyListeners();
+  }
+
+  // ─── Realtime Event Application ────────────────
+
+  /// Apply an incoming [SyncEvent] from the event bus to local state.
+  ///
+  /// Called for events emitted by other clients (phones, board). Own events
+  /// are filtered out upstream by the sync service.
+  void applySyncEvent(SyncEvent event) {
+    switch (event.type) {
+      case SyncEventType.playerReady:
+        final playerId = event.data['playerId'] as String?;
+        final ready = event.data['ready'] as bool? ?? true;
+        if (playerId != null) {
+          _players = _players
+              .map((p) => p.id == playerId ? p.copyWith(ready: ready) : p)
+              .toList();
+        }
+        break;
+      case SyncEventType.playerJoined:
+        final id = event.data['playerId'] as String?;
+        final name = event.data['name'] as String? ?? 'Player';
+        if (id != null && !_players.any((p) => p.id == id)) {
+          _players = [..._players, Player(id: id, name: name, level: 1)];
+        }
+        break;
+      case SyncEventType.playerLeft:
+        final id = event.data['playerId'] as String?;
+        if (id != null) {
+          _players = _players.where((p) => p.id != id).toList();
+        }
+        break;
+      case SyncEventType.performanceUpdate:
+        final singerId = event.data['singerId'] as String?;
+        final score = (event.data['score'] as num?)?.toInt();
+        if (singerId != null && score != null) {
+          _players = _players
+              .map((p) => p.id == singerId ? p.copyWith(score: score) : p)
+              .toList();
+        }
+        break;
+      case SyncEventType.performanceComplete:
+        final singerId = event.data['singerId'] as String?;
+        final score = (event.data['score'] as num?)?.toInt() ?? 0;
+        if (singerId != null) {
+          _players = _players
+              .map((p) => p.id == singerId ? p.copyWith(score: score) : p)
+              .toList();
+        }
+        break;
+      case SyncEventType.gameStarted:
+      case SyncEventType.turnAdvanced:
+      case SyncEventType.songAdded:
+      case SyncEventType.songRemoved:
+      case SyncEventType.chatMessage:
+      case SyncEventType.ping:
+      case SyncEventType.pong:
+        // Handled by room/player streams or not relevant to phone state.
+        break;
+    }
     notifyListeners();
   }
 }

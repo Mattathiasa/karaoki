@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
@@ -116,6 +118,15 @@ void main() async {
 
 // ─── Navigator Keys ────────────────────────────────
 final _shellKey = GlobalKey<NavigatorState>();
+
+/// Bridges the realtime event bus into AppState: every incoming sync event
+/// (player joins/leaves, ready toggles, live scores) is applied to the shared
+/// state so phone and board views stay in sync.
+StreamSubscription<SyncEvent>? _subscribeAppStateToEvents(BuildContext context) {
+  final sync = Provider.of<RealtimeSyncService>(context, listen: false);
+  final appState = Provider.of<AppState>(context, listen: false);
+  return sync.eventStream.listen(appState.applySyncEvent);
+}
 
 // ─── Go Router Configuration ───────────────────────
 /// Detect if the user agent indicates a TV/kiosk device.
@@ -356,8 +367,27 @@ final _router = GoRouter(
   ],
 );
 
-class KaraokiApp extends StatelessWidget {
+class KaraokiApp extends StatefulWidget {
   const KaraokiApp({super.key});
+
+  @override
+  State<KaraokiApp> createState() => _KaraokiAppState();
+}
+
+class _KaraokiAppState extends State<KaraokiApp> {
+  StreamSubscription<SyncEvent>? _eventSub;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _eventSub ??= _subscribeAppStateToEvents(context);
+  }
+
+  @override
+  void dispose() {
+    _eventSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
