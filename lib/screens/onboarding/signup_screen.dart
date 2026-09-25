@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
+import '../../services/app_config.dart';
 
 class SignupScreen extends StatefulWidget {
   final VoidCallback? onBack;
@@ -23,6 +25,7 @@ class _SignupScreenState extends State<SignupScreen> {
   String? _emailError;
   String? _passwordError;
   String? _confirmError;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -30,6 +33,61 @@ class _SignupScreenState extends State<SignupScreen> {
     _passwordController.dispose();
     _confirmController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirm = _confirmController.text;
+
+    setState(() {
+      _emailError = email.isEmpty ? 'Enter your email' : null;
+      _passwordError = password.length < 8
+          ? (password.isEmpty ? 'Enter a password' : 'Must be at least 8 characters')
+          : null;
+      _confirmError = confirm != password ? 'Passwords do not match' : null;
+    });
+    if (_emailError != null || _passwordError != null || _confirmError != null) {
+      return;
+    }
+
+    setState(() => _submitting = true);
+    try {
+      if (AppConfig.isFirebaseConfigured) {
+        final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+        // Seed a friendly display name from the email local part.
+        final name = email.split('@').first;
+        if (name.isNotEmpty) {
+          await cred.user?.updateDisplayName(name);
+        }
+      } else {
+        // Firebase not configured (placeholder credentials): fall back to a
+        // local identity so the flow stays testable without real auth.
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      }
+      if (mounted) widget.onSignedUp?.call();
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        if (e.code == 'email-already-in-use') {
+          _emailError = 'That email already has an account';
+        } else if (e.code == 'invalid-email') {
+          _emailError = 'That email does not look valid';
+        } else if (e.code == 'weak-password') {
+          _passwordError = 'Choose a stronger password';
+        } else {
+          _passwordError = 'Sign up failed (${e.code})';
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _passwordError = 'Sign up failed. Check your connection.');
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -175,7 +233,10 @@ class _SignupScreenState extends State<SignupScreen> {
                 Text(_confirmError!, style: KTypography.monoLabel.copyWith(fontSize: 10, color: KColors.red)),
               ],
               const Spacer(),
-              KPrimaryButton(label: 'Create account', onPressed: widget.onSignedUp),
+              KPrimaryButton(
+                label: _submitting ? 'Creating account…' : 'Create account',
+                onPressed: _submitting ? null : _submit,
+              ),
               const SizedBox(height: 16),
               Center(
                 child: GestureDetector(

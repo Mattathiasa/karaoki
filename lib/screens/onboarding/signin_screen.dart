@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
+import '../../services/app_config.dart';
 
 class SigninScreen extends StatefulWidget {
   final VoidCallback? onBack;
@@ -21,12 +23,55 @@ class _SigninScreenState extends State<SigninScreen> {
   final _passwordController = TextEditingController();
   String? _emailError;
   String? _passwordError;
+  bool _submitting = false;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    setState(() {
+      _emailError = email.isEmpty ? 'Enter your email' : null;
+      _passwordError = password.isEmpty ? 'Enter your password' : null;
+    });
+    if (_emailError != null || _passwordError != null) return;
+
+    setState(() => _submitting = true);
+    try {
+      if (AppConfig.isFirebaseConfigured) {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      } else {
+        // Firebase not configured (placeholder credentials): fall back to a
+        // local identity so the flow stays testable without real auth.
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      }
+      if (mounted) widget.onSignedIn?.call();
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        if (e.code == 'user-not-found' || e.code == 'invalid-email') {
+          _emailError = 'No account with that email';
+        } else if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+          _passwordError = 'Incorrect password';
+        } else {
+          _passwordError = 'Sign in failed (${e.code})';
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _passwordError = 'Sign in failed. Check your connection.');
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -135,7 +180,10 @@ class _SigninScreenState extends State<SigninScreen> {
               ),
               const Spacer(),
               // Sign in button
-              KPrimaryButton(label: 'Sign in', onPressed: widget.onSignedIn),
+              KPrimaryButton(
+                label: _submitting ? 'Signing in…' : 'Sign in',
+                onPressed: _submitting ? null : _submit,
+              ),
               const SizedBox(height: 16),
               // Go to signup
               Center(

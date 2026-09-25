@@ -17,6 +17,7 @@ import 'services/tv_audio_service.dart';
 import 'services/realtime_sync_service.dart';
 import 'services/firebase_room_service.dart';
 import 'services/firebase_sync_service.dart';
+import 'services/app_config.dart';
 
 // Onboarding
 import 'screens/onboarding/splash_screen.dart';
@@ -83,6 +84,9 @@ void main() async {
   // fall back to the stub services that _isFirebaseConfigured drives.
   final hasRealFirebaseConfig =
       !DefaultFirebaseOptions.currentPlatform.apiKey.startsWith('YOUR_');
+  // Shared flag for screens/services that need to fall back to local behavior
+  // when Firebase isn't configured (auth, profile persistence, etc.).
+  AppConfig.isFirebaseConfigured = hasRealFirebaseConfig;
   try {
     if (hasRealFirebaseConfig) {
       await Firebase.initializeApp(
