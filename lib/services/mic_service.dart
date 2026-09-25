@@ -1,6 +1,10 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:audio_waveforms/audio_waveforms.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:permission_handler/permission_handler.dart';
+
 /// Real microphone input service using audio_waveforms.
 ///
 /// Captures mic audio via [RecorderController] and provides:
@@ -22,22 +26,22 @@ class MicInputService {
   bool _useRealMic = false;
   bool get useRealMic => _useRealMic;
 
-  // RecorderController from audio_waveforms (lazy init)
+  // RecorderController from audio_waveforms
+  RecorderController? _recorder;
   StreamSubscription? _waveDataSubscription;
   StreamSubscription? _stateSubscription;
   Timer? _simTimer;
+  Timer? _pollTimer;
   final _rng = Random();
 
   // Pitch detection state
   final _pitchAnalyzer = PitchAnalyzer();
   double _lastAmplitude = 0;
+  double _lastEmittedHz = 0;
 
   /// Initialize the recorder. Call once at app start.
   Future<void> init() async {
     try {
-      // Import audio_waveforms at runtime to avoid web import issues
-      // In production, use: _recorder = RecorderController();
-      // For now, we detect platform and set up accordingly
       _useRealMic = await _checkPlatformSupport();
     } catch (e) {
       _useRealMic = false;
@@ -45,15 +49,18 @@ class MicInputService {
   }
 
   /// Check if the platform supports real mic recording.
+  ///
+  /// audio_waveforms provides native recorders on Android, iOS and macOS.
+  /// Web and other desktop platforms fall back to simulated capture.
   Future<bool> _checkPlatformSupport() async {
-    // audio_waveforms works on Android, iOS, and macOS
-    // On web, we fall back to simulated
-    try {
-      // Try to import and create RecorderController
-      // This will fail on web which is expected
-      return false; // Start with simulated, real mic added when platform confirmed
-    } catch (e) {
-      return false;
+    if (kIsWeb) return false;
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+        return true;
+      default:
+        return false;
     }
   }
 
@@ -64,39 +71,65 @@ class MicInputService {
     if (_isCapturing) return true;
 
     if (_useRealMic) {
-      return _startRealCapture();
-    } else {
-      return _startSimulatedCapture();
+      final started = await _startRealCapture();
+      if (started) return true;
+      // Real capture failed (no permission, no hardware, plugin error):
+      // degrade to simulated so the singing flow keeps working.
+      _useRealMic = false;
     }
+    return _startSimulatedCapture();
   }
 
   /// Start real microphone capture using audio_waveforms.
   Future<bool> _startRealCapture() async {
     try {
-      // In production, use RecorderController:
-      // _recorder = RecorderController()
-      //   ..androidEncoder = AndroidEncoder.aac
-      //   ..androidOutputFormat = AndroidOutputFormat.mpeg4
-      //   ..iosEncoder = IosEncoder.kAudioFormatMPEG4AAC
-      //   ..sampleRate = 44100;
-      //
-      // await _recorder!.record();
-      //
-      // _recorder!.addListener(() {
-      //   if (_recorder!.waveData.isNotEmpty) {
-      //     final amplitude = _recorder!.waveData.last;
-      //     // Feed amplitude data to pitch analyzer
-      //     _processAudioFrame(amplitude);
-      //   }
-      // });
+      // Ask for the platform mic permission first.
+      final status = await Permission.microphone.request();
+      if (!status.isGranted) {
+        _hasPermission = false;
+        return false;
+      }
+      _hasPermission = true;
+
+      _recorder ??= RecorderController()
+        ..androidEncoder = AndroidEncoder.aac
+        ..androidOutputFormat = AndroidOutputFormat.mpeg4
+        ..iosEncoder = IosEncoder.kAudioFormatMPEG4AAC
+        ..sampleRate = 44100;
+
+      await _recorder!.record();
+
+      // Poll the recorder's latest decibel reading at ~12Hz to feed the
+      // pitch analyzer and the broadcast data stream.
+      _pollTimer?.cancel();
+      _pollTimer = Timer.periodic(const Duration(milliseconds: 80), (_) {
+        if (!_isCapturing || _recorder == null) return;
+        final db = _recorder!.getDecibel();
+        // Normalize dB (roughly -60..0) to a 0.0–1.0 amplitude.
+        final amplitude = ((db + 60) / 60).clamp(0.0, 1.0);
+        _emitFrame(amplitude);
+      });
 
       _isCapturing = true;
-      _hasPermission = true;
       return true;
     } catch (e) {
-      _useRealMic = false;
-      return _startSimulatedCapture();
+      _hasPermission = false;
+      return false;
     }
+  }
+
+  /// Analyze an amplitude frame and broadcast a [MicData] point.
+  void _emitFrame(double amplitude) {
+    _lastAmplitude = amplitude;
+    final hz = _pitchAnalyzer.analyze(amplitude);
+    final effectiveHz = hz > 0 ? hz : _lastEmittedHz;
+    _dataController.add(MicData(
+      hz: effectiveHz,
+      amplitude: amplitude,
+      note: PitchDetector.hzToNote(effectiveHz),
+      confidence: _pitchAnalyzer.confidence,
+    ));
+    if (hz > 0) _lastEmittedHz = hz;
   }
 
   /// Start simulated mic capture for development / web.
@@ -131,11 +164,12 @@ class MicInputService {
   Future<void> stopCapture() async {
     _isCapturing = false;
     _simTimer?.cancel();
+    _pollTimer?.cancel();
     _waveDataSubscription?.cancel();
     _stateSubscription?.cancel();
 
     try {
-      // In production: await _recorder?.stop();
+      await _recorder?.stop();
     } catch (_) {}
   }
 
@@ -144,8 +178,10 @@ class MicInputService {
 
   void dispose() {
     _simTimer?.cancel();
+    _pollTimer?.cancel();
     _waveDataSubscription?.cancel();
     _stateSubscription?.cancel();
+    _recorder?.dispose();
     _dataController.close();
     _pitchAnalyzer.reset();
   }
