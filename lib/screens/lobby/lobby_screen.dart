@@ -97,13 +97,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   Future<void> _leaveRoom(AppState appState) async {
     final roomService = context.read<RoomService>();
+    final syncService = context.read<RealtimeSyncService>();
     final room = appState.currentRoom;
     if (room != null) {
       unawaited(_emitEvent(SyncEventType.playerLeft, {'playerId': appState.userId}));
       try {
         await roomService.leaveRoom(room.id, appState.userId);
       } catch (_) {}
-      unawaited(context.read<RealtimeSyncService>().disconnect());
+      unawaited(syncService.disconnect());
     }
     appState.leaveRoom();
     if (!mounted) return;
