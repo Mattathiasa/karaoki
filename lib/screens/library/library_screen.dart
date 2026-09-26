@@ -8,6 +8,7 @@ import '../../widgets/buttons.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/ui_components.dart';
 import '../../models/song.dart';
+import '../../services/song_repository.dart';
 
 class LibraryScreen extends StatefulWidget {
   final VoidCallback? onSongSelected;
@@ -21,10 +22,44 @@ class LibraryScreen extends StatefulWidget {
 class _LibraryScreenState extends State<LibraryScreen> {
   String _selectedCategory = 'All';
   final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  // Loaded and filtered song list
+  List<Song> _songs = [];
+  bool _loading = true;
 
   static const _categories = [
     'All', 'Pop', 'Rock', 'Hip Hop', 'R&B', 'Gospel', 'Classics', 'Party', 'Ethiopian',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSongs();
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.trim());
+      _loadSongs();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSongs() async {
+    final repo = SongRepository.instance;
+    final List<Song> results;
+
+    if (_searchQuery.isNotEmpty) {
+      results = await repo.search(_searchQuery);
+    } else {
+      results = await repo.byGenre(_selectedCategory);
+    }
+
+    if (mounted) setState(() { _songs = results; _loading = false; });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,29 +69,21 @@ class _LibraryScreenState extends State<LibraryScreen> {
         child: Column(
           children: [
             // Header
-            const Padding(
-              padding: EdgeInsets.fromLTRB(
-                KSpacing.mobilePaddingH,
-                KSpacing.mobilePaddingV,
-                KSpacing.mobilePaddingH,
-                0,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                KSpacing.mobilePaddingH, KSpacing.mobilePaddingV, KSpacing.mobilePaddingH, 0,
               ),
               child: Row(
                 children: [
-                  KIconButton(icon: Icons.arrow_back_ios_new, size: 34),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Song Library',
-                      style: TextStyle(
-                        fontFamily: 'BricolageGrotesque',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 22,
-                        color: KColors.bone,
-                      ),
-                    ),
+                  KIconButton(icon: Icons.arrow_back_ios_new, size: 34,
+                      onPressed: () => context.pop()),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text('Song Library', style: TextStyle(
+                      fontFamily: 'BricolageGrotesque', fontWeight: FontWeight.w700,
+                      fontSize: 22, color: KColors.bone,
+                    )),
                   ),
-                  KIconButton(icon: Icons.search, size: 34),
                 ],
               ),
             ),
@@ -64,10 +91,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             // Search field
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                KSpacing.mobilePaddingH,
-                16,
-                KSpacing.mobilePaddingH,
-                0,
+                KSpacing.mobilePaddingH, 16, KSpacing.mobilePaddingH, 0,
               ),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -83,121 +107,133 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     Expanded(
                       child: TextField(
                         controller: _searchController,
-                        style: KTypography.uiBody.copyWith(
-                          color: KColors.bone,
-                          fontSize: 14,
-                        ),
+                        style: KTypography.uiBody.copyWith(color: KColors.bone, fontSize: 14),
                         decoration: InputDecoration(
-                          hintText: 'Search songs...',
-                          hintStyle: KTypography.uiBody.copyWith(
-                            color: KColors.bone28,
-                            fontSize: 14,
-                          ),
+                          hintText: 'Search songs or artists…',
+                          hintStyle: KTypography.uiBody.copyWith(color: KColors.bone28, fontSize: 14),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
                     ),
+                    if (_searchQuery.isNotEmpty)
+                      GestureDetector(
+                        onTap: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                          _loadSongs();
+                        },
+                        child: const Icon(Icons.close, color: KColors.bone28, size: 16),
+                      ),
                   ],
                 ),
               ),
             ),
 
-            // Category pills
-            SizedBox(
-              height: 48,
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(
-                  KSpacing.mobilePaddingH,
-                  12,
-                  KSpacing.mobilePaddingH,
-                  0,
-                ),
-                scrollDirection: Axis.horizontal,
-                itemCount: _categories.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, i) {
-                  return KCategoryPill(
+            // Category pills — hidden while searching
+            if (_searchQuery.isEmpty) ...[
+              SizedBox(
+                height: 48,
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(
+                    KSpacing.mobilePaddingH, 12, KSpacing.mobilePaddingH, 0,
+                  ),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _categories.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, i) => KCategoryPill(
                     label: _categories[i],
                     selected: _selectedCategory == _categories[i],
-                    onTap: () => setState(() => _selectedCategory = _categories[i]),
-                  );
-                },
-              ),
-            ),
-
-            // Filter tags
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                KSpacing.mobilePaddingH,
-                12,
-                KSpacing.mobilePaddingH,
-                0,
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    'ALL SONGS',
-                    style: KTypography.monoLabel.copyWith(fontSize: 9),
+                    onTap: () {
+                      setState(() => _selectedCategory = _categories[i]);
+                      _loadSongs();
+                    },
                   ),
-                  const SizedBox(width: 12),
-                  const _FilterTag(label: 'DIFFICULTY ▾'),
-                  const SizedBox(width: 8),
-                  const _FilterTag(label: 'POPULAR ▾'),
-                ],
+                ),
               ),
-            ),
+              // Row count label
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  KSpacing.mobilePaddingH, 12, KSpacing.mobilePaddingH, 0,
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      _selectedCategory == 'All'
+                          ? 'ALL SONGS'
+                          : _selectedCategory.toUpperCase(),
+                      style: KTypography.monoLabel.copyWith(fontSize: 9),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '· ${_songs.length}',
+                      style: KTypography.monoLabel.copyWith(
+                          fontSize: 9, color: KColors.bone28),
+                    ),
+                  ],
+                ),
+              ),
+            ] else
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  KSpacing.mobilePaddingH, 12, KSpacing.mobilePaddingH, 0,
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      'RESULTS FOR "${_searchQuery.toUpperCase()}"',
+                      style: KTypography.monoLabel.copyWith(fontSize: 9),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '· ${_songs.length}',
+                      style: KTypography.monoLabel.copyWith(
+                          fontSize: 9, color: KColors.bone28),
+                    ),
+                  ],
+                ),
+              ),
 
             // Song list
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(
-                  KSpacing.mobilePaddingH,
-                  12,
-                  KSpacing.mobilePaddingH,
-                  40,
-                ),
-                itemCount: fixtureSongs.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
-                itemBuilder: (context, i) {
-                  final song = fixtureSongs[i];
-                  return KSongCard(
-                    title: song.title,
-                    artist: song.artist,
-                    difficulty: song.difficulty,
-                    duration: song.durationLabel,
-                    artSize: 56,
-                    onTap: () => context.go('/details', extra: song.id),
-                    onAdd: () => context.go('/details', extra: song.id),
-                  );
-                },
-              ),
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator(color: KColors.lime))
+                  : _songs.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.music_off, color: KColors.bone28, size: 48),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No songs found',
+                                style: KTypography.uiRowTitle.copyWith(fontSize: 16),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(
+                            KSpacing.mobilePaddingH, 12, KSpacing.mobilePaddingH, 40,
+                          ),
+                          itemCount: _songs.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          itemBuilder: (context, i) {
+                            final song = _songs[i];
+                            return KSongCard(
+                              title: song.title,
+                              artist: song.artist,
+                              difficulty: song.difficulty,
+                              duration: song.durationLabel,
+                              artSize: 56,
+                              onTap: () => context.go('/details', extra: song.id),
+                              onAdd: () => context.go('/details', extra: song.id),
+                            );
+                          },
+                        ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FilterTag extends StatelessWidget {
-  final String label;
-  const _FilterTag({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: KColors.ink600,
-        borderRadius: BorderRadius.circular(KRadius.pill),
-      ),
-      child: Text(
-        label,
-        style: KTypography.monoLabel.copyWith(
-          fontSize: 9,
-          color: KColors.bone45,
         ),
       ),
     );

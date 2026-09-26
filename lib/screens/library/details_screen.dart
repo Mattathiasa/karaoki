@@ -12,8 +12,9 @@ import '../../models/song.dart';
 import '../../providers/app_state.dart';
 import '../../services/realtime_sync_service.dart';
 import '../../services/room_service.dart';
+import '../../services/song_repository.dart';
 
-class DetailsScreen extends StatelessWidget {
+class DetailsScreen extends StatefulWidget {
   final String? songId;
   final VoidCallback? onBack;
   final VoidCallback? onAddToQueue;
@@ -21,13 +22,43 @@ class DetailsScreen extends StatelessWidget {
   const DetailsScreen({super.key, this.songId, this.onBack, this.onAddToQueue});
 
   @override
+  State<DetailsScreen> createState() => _DetailsScreenState();
+}
+
+class _DetailsScreenState extends State<DetailsScreen> {
+  Song? _song;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSong();
+  }
+
+  Future<void> _loadSong() async {
+    final repo = SongRepository.instance;
+    var song = await repo.byId(widget.songId ?? fixtureSongs.first.id);
+    // Unknown id: fall back to the first fixture song, also fully loaded —
+    // a raw fixture would arrive without its lyrics.
+    song ??= await repo.byId(fixtureSongs.first.id);
+    if (mounted) {
+      setState(() {
+        _song = song;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final s = songId == null
-        ? fixtureSongs.first
-        : fixtureSongs.firstWhere(
-            (song) => song.id == songId,
-            orElse: () => fixtureSongs.first,
-          );
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: KColors.ink800,
+        body: Center(child: CircularProgressIndicator(color: KColors.lime)),
+      );
+    }
+
+    final s = _song!;
     return Scaffold(
       backgroundColor: KColors.ink800,
       body: SingleChildScrollView(
@@ -67,7 +98,7 @@ class DetailsScreen extends StatelessWidget {
                 // Back button
                 Positioned(
                   top: 56, left: 20,
-                  child: KIconButton(icon: Icons.arrow_back_ios_new, size: 34, onPressed: onBack),
+                  child: KIconButton(icon: Icons.arrow_back_ios_new, size: 34, onPressed: widget.onBack),
                 ),
                 // Title over art
                 Positioned(
@@ -196,7 +227,7 @@ class DetailsScreen extends StatelessWidget {
       ),
       song,
     );
-    onAddToQueue?.call();
+    widget.onAddToQueue?.call();
   }
 }
 

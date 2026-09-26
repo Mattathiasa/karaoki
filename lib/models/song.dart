@@ -9,7 +9,11 @@ class Song {
   final Duration duration;
   final List<LyricLine> lyrics;
   final NoteTrack? noteTrack;
-  final String? audioUrl; // URL or asset path for backing track
+  /// HTTP/HTTPS URL or local asset path for the backing track.
+  final String? audioUrl;
+  /// Asset path for the LRC lyric file, e.g. `assets/lyrics/neon-midnight.lrc`.
+  /// SongRepository reads this and populates [lyrics] at load time.
+  final String? lrcAsset;
 
   const Song({
     required this.id,
@@ -21,6 +25,7 @@ class Song {
     this.lyrics = const [],
     this.noteTrack,
     this.audioUrl,
+    this.lrcAsset,
   });
 
   String get durationLabel {
@@ -28,6 +33,35 @@ class Song {
     final secs = duration.inSeconds % 60;
     return '$mins:${secs.toString().padLeft(2, '0')}';
   }
+
+  // ── Serialization ────────────────────────────────────────────────────────
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'artist': artist,
+        'genre': genre,
+        'difficulty': difficulty,
+        'durationMs': duration.inMilliseconds,
+        if (audioUrl != null) 'audioUrl': audioUrl,
+        if (lrcAsset != null) 'lrcAsset': lrcAsset,
+        if (noteTrack != null) 'noteTrack': noteTrack!.toJson(),
+        // lyrics are derived from the LRC asset at runtime — not persisted
+      };
+
+  factory Song.fromJson(Map<String, dynamic> json) => Song(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        artist: json['artist'] as String,
+        genre: json['genre'] as String,
+        difficulty: json['difficulty'] as String,
+        duration: Duration(milliseconds: (json['durationMs'] as num).toInt()),
+        audioUrl: json['audioUrl'] as String?,
+        lrcAsset: json['lrcAsset'] as String?,
+        noteTrack: json['noteTrack'] != null
+            ? NoteTrack.fromJson(json['noteTrack'] as Map<String, dynamic>)
+            : null,
+      );
 }
 
 class LyricLine {
@@ -56,9 +90,23 @@ class LyricLine {
     if (lineDurationSeconds <= 0) return 0;
     return syllableCount / lineDurationSeconds;
   }
+
+  Map<String, dynamic> toJson() => {
+        't': t,
+        'text': text,
+        'part': part,
+      };
+
+  factory LyricLine.fromJson(Map<String, dynamic> json) => LyricLine(
+        t: (json['t'] as num).toInt(),
+        text: json['text'] as String,
+        part: json['part'] as String? ?? 'BOTH',
+      );
 }
 
-/// Fixture songs for testing
+/// Fixture songs — the catalogue used throughout the app.
+/// Each entry points at its LRC asset; SongRepository loads and parses
+/// the lyrics at runtime so we never have to duplicate them here.
 const fixtureSongs = [
   Song(
     id: 'neon-midnight',
@@ -67,17 +115,7 @@ const fixtureSongs = [
     genre: 'Pop',
     difficulty: 'Medium',
     duration: Duration(minutes: 3, seconds: 42),
-    lyrics: [
-      LyricLine(t: 5, text: "We were never meant to last this long"),
-      LyricLine(t: 15, text: "Dancing in the neon midnight glow"),
-      LyricLine(t: 25, text: "Every heartbeat tells a different song"),
-      LyricLine(t: 35, text: "We were never meant to last this long"),
-      LyricLine(t: 45, text: "But here we are, just proving them wrong"),
-      LyricLine(t: 55, text: "Shadows fall but we still hold on tight"),
-      LyricLine(t: 65, text: "Through the darkness, we become the light"),
-      LyricLine(t: 80, text: "This is our neon midnight"),
-      LyricLine(t: 92, text: "We'll dance until the morning light"),
-    ],
+    lrcAsset: 'assets/lyrics/neon-midnight.lrc',
     noteTrack: NoteTrack(songId: 'neon-midnight', notes: [
       TargetNote(t: 5, hz: 330, durationPercent: 8),   // E4
       TargetNote(t: 15, hz: 392, durationPercent: 8),  // G4
@@ -97,6 +135,7 @@ const fixtureSongs = [
     genre: 'Rock',
     difficulty: 'Hard',
     duration: Duration(minutes: 4, seconds: 15),
+    lrcAsset: 'assets/lyrics/concrete-halo.lrc',
     noteTrack: NoteTrack(songId: 'concrete-halo', notes: [
       TargetNote(t: 8, hz: 220, durationPercent: 6),   // A3
       TargetNote(t: 16, hz: 262, durationPercent: 6),  // C4
@@ -115,6 +154,7 @@ const fixtureSongs = [
     genre: 'Hip Hop',
     difficulty: 'Easy',
     duration: Duration(minutes: 2, seconds: 58),
+    lrcAsset: 'assets/lyrics/loose-change.lrc',
     noteTrack: NoteTrack(songId: 'loose-change', notes: [
       TargetNote(t: 5, hz: 294, durationPercent: 5),   // D4
       TargetNote(t: 10, hz: 330, durationPercent: 5),  // E4
@@ -133,6 +173,7 @@ const fixtureSongs = [
     genre: 'R&B',
     difficulty: 'Medium',
     duration: Duration(minutes: 3, seconds: 30),
+    lrcAsset: 'assets/lyrics/slow-gold.lrc',
     noteTrack: NoteTrack(songId: 'slow-gold', notes: [
       TargetNote(t: 6, hz: 330, durationPercent: 7),   // E4
       TargetNote(t: 14, hz: 349, durationPercent: 7),  // F4
@@ -151,6 +192,7 @@ const fixtureSongs = [
     genre: 'Gospel',
     difficulty: 'Hard',
     duration: Duration(minutes: 5, seconds: 12),
+    lrcAsset: 'assets/lyrics/higher-ground.lrc',
     noteTrack: NoteTrack(songId: 'higher-ground', notes: [
       TargetNote(t: 8, hz: 262, durationPercent: 6),   // C4
       TargetNote(t: 16, hz: 330, durationPercent: 6),  // E4
@@ -169,6 +211,7 @@ const fixtureSongs = [
     genre: 'Ethiopian',
     difficulty: 'Medium',
     duration: Duration(minutes: 4, seconds: 5),
+    lrcAsset: 'assets/lyrics/yene-fikir.lrc',
     noteTrack: NoteTrack(songId: 'yene-fikir', notes: [
       TargetNote(t: 8, hz: 294, durationPercent: 7),   // D4
       TargetNote(t: 16, hz: 330, durationPercent: 7),  // E4
@@ -187,6 +230,7 @@ const fixtureSongs = [
     genre: 'Party',
     difficulty: 'Easy',
     duration: Duration(minutes: 3, seconds: 20),
+    lrcAsset: 'assets/lyrics/tequila-sunrise.lrc',
     noteTrack: NoteTrack(songId: 'tequila-sunrise', notes: [
       TargetNote(t: 5, hz: 330, durationPercent: 5),   // E4
       TargetNote(t: 11, hz: 349, durationPercent: 5),  // F4
@@ -205,6 +249,7 @@ const fixtureSongs = [
     genre: 'Classics',
     difficulty: 'Hard',
     duration: Duration(minutes: 4, seconds: 45),
+    lrcAsset: 'assets/lyrics/old-sepia.lrc',
     noteTrack: NoteTrack(songId: 'old-sepia', notes: [
       TargetNote(t: 10, hz: 262, durationPercent: 7),   // C4
       TargetNote(t: 18, hz: 294, durationPercent: 7),  // D4
