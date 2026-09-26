@@ -8,9 +8,9 @@ import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
+import '../../widgets/name_gate.dart';
 import '../../widgets/ui_components.dart';
 import '../../providers/app_state.dart';
-import '../../services/auth_service.dart';
 import '../../services/room_service.dart';
 
 class JoinRoomScreen extends StatefulWidget {
@@ -76,7 +76,7 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
     // Name gate: a guest still carrying the default identity picks a name
     // before joining, so the room never shows another "Player".
     if (!context.watch<AppState>().hasCustomName) {
-      return const _NameGateScreen();
+      return const KNameGateScreen();
     }
 
     return Scaffold(
@@ -193,99 +193,6 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
               const _NearbyRoom(name: 'Friday Night Fire', code: 'KARA-7821', players: '4/8', joinable: true),
               const SizedBox(height: 8),
               const _NearbyRoom(name: 'Saturday Chill', code: 'KARA-3456', players: '8/8', joinable: false),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Shown instead of the join form when the user has no display name yet.
-/// Collects a name, persists it to AppState, then reveals the join form.
-class _NameGateScreen extends StatefulWidget {
-  const _NameGateScreen();
-
-  @override
-  State<_NameGateScreen> createState() => _NameGateScreenState();
-}
-
-class _NameGateScreenState extends State<_NameGateScreen> {
-  final _nameController = TextEditingController();
-  bool _hasError = false;
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  void _confirm() {
-    final name = _nameController.text.trim();
-    if (name.isEmpty) {
-      setState(() => _hasError = true);
-      return;
-    }
-    context.read<AppState>().setUserName(name);
-    // Same as the setup screen: give the guest a stable Firebase UID so
-    // multiplayer sync works across restarts.
-    unawaited(context.read<AuthService>().signInAsGuest());
-    // Rebuild switches back to the join form now that hasCustomName holds.
-    setState(() {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: KColors.ink800,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: KSpacing.mobilePaddingH),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 32),
-              const Text('Before you join…', style: TextStyle(
-                fontFamily: 'BricolageGrotesque', fontWeight: FontWeight.w700,
-                fontSize: 28, color: KColors.bone,
-              )),
-              const SizedBox(height: 12),
-              Text(
-                'Pick a display name so the room knows who is singing.',
-                style: KTypography.uiBody.copyWith(fontSize: 14.5),
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _nameController,
-                textCapitalization: TextCapitalization.words,
-                style: KTypography.uiBody.copyWith(color: KColors.bone, fontSize: 15),
-                decoration: InputDecoration(
-                  hintText: 'Your display name',
-                  hintStyle: KTypography.uiBody.copyWith(color: KColors.bone28, fontSize: 15),
-                  errorText: _hasError ? 'A name is required to join.' : null,
-                  filled: true,
-                  fillColor: KColors.ink600,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(KRadius.input),
-                    borderSide: const BorderSide(color: KColors.hairline, width: 1),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(KRadius.input),
-                    borderSide: const BorderSide(color: KColors.hairline, width: 1),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(KRadius.input),
-                    borderSide: const BorderSide(color: KColors.lime, width: 1),
-                  ),
-                ),
-                onChanged: (_) {
-                  if (_hasError) setState(() => _hasError = false);
-                },
-                onSubmitted: (_) => _confirm(),
-              ),
-              const SizedBox(height: 24),
-              KPrimaryButton(label: 'Continue', onPressed: _confirm),
             ],
           ),
         ),

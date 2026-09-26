@@ -5,6 +5,7 @@ import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
+import '../../widgets/name_gate.dart';
 import '../../models/room.dart';
 import '../../providers/app_state.dart';
 import '../../services/room_service.dart';
@@ -93,6 +94,12 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Name gate: the host appears in the room roster, so a guest still
+    // carrying the default identity picks a name before creating a room.
+    if (!context.watch<AppState>().hasCustomName) {
+      return const KNameGateScreen(title: 'Before you host…');
+    }
+
     return Scaffold(
       backgroundColor: KColors.ink800,
       body: SafeArea(
