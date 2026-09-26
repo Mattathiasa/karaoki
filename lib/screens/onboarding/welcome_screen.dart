@@ -49,15 +49,16 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Create an account to save your scores,\nunlock achievements, and compete globally.',
+                'Grab a mic and sing. No account needed \u2014\nset a name and jump into the room.',
                 style: KTypography.uiBody.copyWith(fontSize: 14.5),
                 textAlign: TextAlign.center,
               ),
               const Spacer(flex: 2),
-              // Buttons
+              // Guest is the primary path, Just Dance style: play first,
+              // account later.
               KPrimaryButton(
-                label: 'Create account',
-                onPressed: onContinue,
+                label: 'Play as guest',
+                onPressed: onGuest ?? onContinue,
               ),
               const SizedBox(height: 12),
               const KSecondaryButton(
@@ -69,11 +70,11 @@ class WelcomeScreen extends StatelessWidget {
                 icon: Icon(Icons.g_mobiledata, color: KColors.bone, size: 20),
               ),
               const SizedBox(height: 20),
-              // Guest
+              // Account creation demoted to a quiet link.
               GestureDetector(
-                onTap: onGuest ?? onContinue,
+                onTap: onContinue,
                 child: Text(
-                  'Continue as guest →',
+                  'Create an account \u2192',
                   style: KTypography.uiButton.copyWith(
                     color: KColors.bone55,
                     fontWeight: FontWeight.w400,
