@@ -7,7 +7,11 @@ import '../../widgets/buttons.dart';
 class WelcomeScreen extends StatelessWidget {
   final VoidCallback? onContinue;
 
-  const WelcomeScreen({super.key, this.onContinue});
+  /// Guest path: new guests must set a display name before playing, so this
+  /// routes to the setup screen rather than straight into the app.
+  final VoidCallback? onGuest;
+
+  const WelcomeScreen({super.key, this.onContinue, this.onGuest});
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +71,7 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: 20),
               // Guest
               GestureDetector(
-                onTap: onContinue,
+                onTap: onGuest ?? onContinue,
                 child: Text(
                   'Continue as guest →',
                   style: KTypography.uiButton.copyWith(

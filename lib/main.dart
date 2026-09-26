@@ -193,7 +193,9 @@ final _router = GoRouter(
     GoRoute(
       path: '/welcome',
       builder: (ctx, state) => WelcomeScreen(
-        onContinue: () => ctx.go('/home'),
+        onContinue: () => ctx.go('/signup'),
+        // Guests set up their profile (name, genres, level) before playing.
+        onGuest: () => ctx.go('/setup'),
       ),
     ),
     GoRoute(
