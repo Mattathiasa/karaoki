@@ -381,8 +381,11 @@ class KScoreBadge extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text(
-          score.toString(),
+        // Counts up on entry — the phone's CompleteScreen reveal moment.
+        KCountUpText(
+          score,
+          duration: const Duration(milliseconds: 1100),
+          curve: Curves.easeOutCubic,
           style: KTypography.displayHero.copyWith(fontSize: 88, color: KColors.gold),
         ),
         Padding(

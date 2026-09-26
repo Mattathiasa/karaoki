@@ -4,6 +4,7 @@ import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
 import '../../widgets/cards.dart';
+import '../../widgets/ui_components.dart';
 
 class BoardRevealScreen extends StatelessWidget {
   final String singerName;
@@ -80,9 +81,11 @@ class BoardRevealScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // Score display
-                    Text(
-                      '$score',
+                    // Score display — the classic slow count-up reveal.
+                    KCountUpText(
+                      score,
+                      duration: const Duration(milliseconds: 1200),
+                      curve: Curves.easeOutCubic,
                       style: TextStyle(
                         fontFamily: 'BricolageGrotesque',
                         fontWeight: FontWeight.w800,
@@ -206,8 +209,11 @@ class _BreakdownRow extends StatelessWidget {
               label,
               style: KTypography.boardMono.copyWith(fontSize: 14),
             ),
-            Text(
-              '$value%',
+            KCountUpText(
+              value,
+              suffix: '%',
+              duration: const Duration(milliseconds: 900),
+              curve: Curves.easeOutCubic,
               style: TextStyle(
                 fontFamily: 'BricolageGrotesque',
                 fontWeight: FontWeight.w700,
@@ -218,26 +224,32 @@ class _BreakdownRow extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        Container(
-          height: 12,
-          decoration: BoxDecoration(
-            color: KColors.ink600,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: value / 100,
-            child: Container(
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(999),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.5),
-                    blurRadius: 12,
-                    spreadRadius: 1,
-                  ),
-                ],
+        // Fill grows into place as the number counts up.
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: value / 100),
+          duration: const Duration(milliseconds: 900),
+          curve: Curves.easeOutCubic,
+          builder: (context, v, _) => Container(
+            height: 12,
+            decoration: BoxDecoration(
+              color: KColors.ink600,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: v.clamp(0.0, 1.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.5),
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -297,8 +309,9 @@ class _RankingRow extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            score.toString(),
+          KCountUpText(
+            score,
+            duration: const Duration(milliseconds: 900),
             style: const TextStyle(
               fontFamily: 'BricolageGrotesque',
               fontWeight: FontWeight.w800,

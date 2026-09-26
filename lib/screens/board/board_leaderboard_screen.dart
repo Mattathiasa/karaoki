@@ -4,6 +4,7 @@ import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../widgets/cards.dart';
+import '../../widgets/ui_components.dart';
 import '../../providers/app_state.dart';
 
 class BoardLeaderboardScreen extends StatelessWidget {
@@ -135,10 +136,13 @@ class BoardLeaderboardScreen extends StatelessWidget {
                             fontSize: 22, color: KColors.bone,
                           )),
                           const SizedBox(width: 16),
-                          Text('${effectiveEntries[3].score}', style: const TextStyle(
-                            fontFamily: 'BricolageGrotesque', fontWeight: FontWeight.w800,
-                            fontSize: 26, color: KColors.gold,
-                          )),
+                          KCountUpText(
+                            effectiveEntries[3].score,
+                            style: const TextStyle(
+                              fontFamily: 'BricolageGrotesque', fontWeight: FontWeight.w800,
+                              fontSize: 26, color: KColors.gold,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -202,19 +206,30 @@ class _BoardPodiumColumn extends StatelessWidget {
           style: KTypography.boardMono.copyWith(fontSize: 14, color: _color),
         ),
         const SizedBox(height: 4),
-        Text('$score', style: KTypography.boardMono.copyWith(fontSize: 14, color: _color)),
+        // Counts up as the room's live scores land.
+        KCountUpText(
+          score,
+          style: KTypography.boardMono.copyWith(fontSize: 14, color: _color),
+        ),
         if (rank == 1) ...[
           const SizedBox(height: 8),           const KRankBadge(rank: 'SUPERSTAR'),
         ],
         const SizedBox(height: 12),
-        Container(
-          width: 160, height: height,
-          decoration: BoxDecoration(
-            color: rank == 1 ? KColors.gold.withValues(alpha: 0.3) : KColors.ink600,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            border: Border.all(
-              color: rank == 1 ? KColors.gold.withValues(alpha: 0.5) : KColors.hairline,
-              width: 0.5,
+        // Podium block grows into place on entry.
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: height),
+          duration: const Duration(milliseconds: 900),
+          curve: Curves.easeOutCubic,
+          builder: (context, h, _) => Container(
+            width: 160,
+            height: h,
+            decoration: BoxDecoration(
+              color: rank == 1 ? KColors.gold.withValues(alpha: 0.3) : KColors.ink600,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              border: Border.all(
+                color: rank == 1 ? KColors.gold.withValues(alpha: 0.5) : KColors.hairline,
+                width: 0.5,
+              ),
             ),
           ),
         ),

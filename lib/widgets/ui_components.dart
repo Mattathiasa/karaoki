@@ -3,6 +3,43 @@ import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 
+/// Number that counts smoothly toward each new value instead of snapping.
+///
+/// Used for reveal/final scores, podium scores, and live readouts: the text
+/// glides to the new value on every rebuild rather than jumping. The shown
+/// integer is floored so the exact target only appears when the count lands.
+class KCountUpText extends StatelessWidget {
+  final int value;
+  final TextStyle style;
+  final Duration duration;
+  final Curve curve;
+  final String prefix;
+  final String suffix;
+
+  const KCountUpText(
+    this.value, {
+    super.key,
+    required this.style,
+    this.duration = const Duration(milliseconds: 700),
+    this.curve = Curves.easeOut,
+    this.prefix = '',
+    this.suffix = '',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: value.toDouble(), end: value.toDouble()),
+      duration: duration,
+      curve: curve,
+      builder: (context, v, _) => Text(
+        '$prefix${v.floor()}$suffix',
+        style: style,
+      ),
+    );
+  }
+}
+
 /// Status tag: READY, SINGING, PICKING SONG, DISCONNECTED
 class KStatusTag extends StatelessWidget {
   final String status;

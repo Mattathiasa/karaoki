@@ -3,6 +3,7 @@ import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../widgets/cards.dart';
+import '../../widgets/ui_components.dart';
 
 class BoardVsScreen extends StatelessWidget {
   final String playerAName;
@@ -101,8 +102,10 @@ class BoardVsScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          Text(
-                            '$playerAScore',
+                          KCountUpText(
+                            playerAScore,
+                            duration: const Duration(milliseconds: 1100),
+                            curve: Curves.easeOutCubic,
                             style: TextStyle(
                               fontFamily: 'BricolageGrotesque', fontWeight: FontWeight.w800,
                               fontSize: 96, color: KColors.tangerine,
@@ -160,8 +163,10 @@ class BoardVsScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          Text(
-                            '$playerBScore',
+                          KCountUpText(
+                            playerBScore,
+                            duration: const Duration(milliseconds: 1100),
+                            curve: Curves.easeOutCubic,
                             style: TextStyle(
                               fontFamily: 'BricolageGrotesque', fontWeight: FontWeight.w800,
                               fontSize: 96, color: KColors.teal,
@@ -223,8 +228,8 @@ class _TeamPill extends StatelessWidget {
         children: [
           Text(label, style: KTypography.boardMono.copyWith(fontSize: 13, color: color)),
           const SizedBox(width: 12),
-          Text(
-            '$score',
+          KCountUpText(
+            score,
             style: TextStyle(
               fontFamily: 'BricolageGrotesque', fontWeight: FontWeight.w800,
               fontSize: 22, color: color,

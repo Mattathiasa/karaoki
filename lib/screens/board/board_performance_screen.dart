@@ -269,8 +269,8 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                       ),
                       // Counts toward each perf.tick value so the board
                       // score glides instead of jumping every 2 seconds.
-                      child: _AnimatedNumber(
-                        value: liveScore.toDouble(),
+                      child: KCountUpText(
+                        liveScore,
                         duration: const Duration(milliseconds: 700),
                         style: const TextStyle(
                           fontFamily: 'BricolageGrotesque',
@@ -289,17 +289,17 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                       children: [
                         Row(
                           children: [
-                            _AnimatedMetric(label: 'PITCH', value: s.pitch),
+                            KCountUpText(s.pitch, prefix: 'PITCH ', suffix: '%', duration: const Duration(milliseconds: 500), style: KTypography.boardMono.copyWith(fontSize: 13)),
                             const SizedBox(width: 16),
-                            _AnimatedMetric(label: 'CONSISTENCY', value: s.consistency),
+                            KCountUpText(s.consistency, prefix: 'CONSISTENCY ', suffix: '%', duration: const Duration(milliseconds: 500), style: KTypography.boardMono.copyWith(fontSize: 13)),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            _AnimatedMetric(label: 'SPEED', value: s.speed),
+                            KCountUpText(s.speed, prefix: 'SPEED ', suffix: '%', duration: const Duration(milliseconds: 500), style: KTypography.boardMono.copyWith(fontSize: 13)),
                             const SizedBox(width: 16),
-                            _AnimatedMetric(label: 'ENERGY', value: s.energy),
+                            KCountUpText(s.energy, prefix: 'ENERGY ', suffix: '%', duration: const Duration(milliseconds: 500), style: KTypography.boardMono.copyWith(fontSize: 13)),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -382,59 +382,6 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Number that counts smoothly toward each new value instead of snapping.
-/// Used for the board's big live score between perf.ticks.
-class _AnimatedNumber extends StatelessWidget {
-  final double value;
-  final TextStyle style;
-  final Duration duration;
-
-  const _AnimatedNumber({
-    required this.value,
-    required this.style,
-    this.duration = const Duration(milliseconds: 500),
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: value, end: value),
-      duration: duration,
-      curve: Curves.easeOut,
-      builder: (context, v, _) {
-        // Round away from zero so a moving score always changes its digits —
-        // pure rounding would leave it stuck showing the previous integer.
-        final shown = v < 0 ? v.ceil() : v.floor();
-        return Text('$shown', style: style);
-      },
-    );
-  }
-}
-
-/// Board metric readout ("PITCH 87%") whose number glides between ticks.
-class _AnimatedMetric extends StatelessWidget {
-  final String label;
-  final int value;
-
-  const _AnimatedMetric({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: value.toDouble(), end: value.toDouble()),
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeOut,
-      builder: (context, v, _) {
-        final shown = v.floor().clamp(0, 100);
-        return Text(
-          '$label $shown%',
-          style: KTypography.boardMono.copyWith(fontSize: 13),
-        );
-      },
     );
   }
 }
