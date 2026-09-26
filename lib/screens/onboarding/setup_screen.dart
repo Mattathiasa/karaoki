@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
+import '../../providers/app_state.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
@@ -20,6 +22,14 @@ class _SetupScreenState extends State<SetupScreen> {
   final _usernameController = TextEditingController();
   String _selectedLevel = '';
   final Set<String> _selectedGenres = {};
+  bool _nameError = false;
+
+  static const _levelValues = {
+    'Beginner': 1,
+    'Casual': 5,
+    'Performer': 10,
+    'Karaoke Legend': 20,
+  };
 
   static const _genres = ['Pop', 'Rock', 'Hip Hop', 'R&B', 'Gospel', 'Classics', 'Party', 'Ethiopian'];
   static const _levels = [
@@ -47,7 +57,11 @@ class _SetupScreenState extends State<SetupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              KIconButton(icon: Icons.arrow_back_ios_new, size: 34, onPressed: () {}),
+              KIconButton(
+                icon: Icons.arrow_back_ios_new,
+                size: 34,
+                onPressed: () => Navigator.of(context).maybePop(),
+              ),
               const SizedBox(height: 32),
               const Text(
                 'Set up your profile',
@@ -87,8 +101,27 @@ class _SetupScreenState extends State<SetupScreen> {
               _Field(label: 'DISPLAY NAME', child: TextField(
                 controller: _nameController,
                 style: KTypography.uiBody.copyWith(color: KColors.bone, fontSize: 15),
-                decoration: _inputDecoration('Your display name'),
+                decoration: _inputDecoration('Your display name').copyWith(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(KRadius.input),
+                    borderSide: BorderSide(color: _nameError ? KColors.red : KColors.hairline, width: 1),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(KRadius.input),
+                    borderSide: BorderSide(color: _nameError ? KColors.red : KColors.hairline, width: 1),
+                  ),
+                ),
+                onChanged: (_) {
+                  if (_nameError) setState(() => _nameError = false);
+                },
               )),
+              if (_nameError) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'Pick a name so the room knows who is singing.',
+                  style: KTypography.monoLabel.copyWith(fontSize: 10, color: KColors.red),
+                ),
+              ],
               const SizedBox(height: 16),
               // Username
               _Field(label: 'USERNAME', child: TextField(
@@ -180,13 +213,28 @@ class _SetupScreenState extends State<SetupScreen> {
                 }).toList(),
               ),
               const SizedBox(height: 32),
-              KPrimaryButton(label: 'Enter Karaoki', onPressed: widget.onComplete),
+              KPrimaryButton(label: 'Enter Karaoki', onPressed: _completeProfile),
               const SizedBox(height: 32),
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// Persist the profile before leaving the screen: without this the name
+  /// the guest typed was thrown away and every room showed "Player".
+  void _completeProfile() {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      setState(() => _nameError = true);
+      return;
+    }
+    final appState = context.read<AppState>();
+    appState.setUserName(name);
+    final level = _levelValues[_selectedLevel];
+    if (level != null) appState.setUserLevel(level);
+    widget.onComplete?.call();
   }
 
   InputDecoration _inputDecoration(String hint) {
