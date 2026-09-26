@@ -134,6 +134,12 @@ class KaraokePlaybackService {
   final OnsetDetector _onsetDetector = OnsetDetector();
   int _lastAmplitudeAtMs = 0;
 
+  /// True while a real performance session is running: mic data drives the
+  /// score and the simulated demo scoring is suppressed.
+  bool _micSession = false;
+  int _pitchMissStreak = 0;
+  bool _lastAudioFailed = false;
+
   final _stateController = StreamController<KaraokeState>.broadcast();
   Stream<KaraokeState> get stateStream => _stateController.stream;
 
@@ -180,6 +186,9 @@ class KaraokePlaybackService {
   /// instead of simulated values.
   void connectMic(MicInputService micService) {
     _micSubscription?.cancel();
+    _micSession = true;
+    _pitchMissStreak = 0;
+    _simCombo = 0;
     _micSubscription = micService.dataStream.listen(_onMicData);
   }
 
@@ -187,7 +196,20 @@ class KaraokePlaybackService {
   void disconnectMic() {
     _micSubscription?.cancel();
     _micSubscription = null;
+    _micSession = false;
+  }
 
+  /// Start a real performance session: play the song's backing track when it
+  /// has one, and let live mic data drive the score. Falls back to simulated
+  /// playback (time advances without audio) when there is no audio source or
+  /// it fails to load — mic scoring keeps working either way.
+  Future<void> playWithMic() async {
+    final url = _song.audioUrl;
+    if (url != null && url.isNotEmpty) {
+      await playUrl(url);
+      if (!_lastAudioFailed) return;
+    }
+    playSimulated();
   }
 
   /// Process real mic data for scoring.
@@ -247,6 +269,15 @@ class KaraokePlaybackService {
     );
     _simScore = PerformanceScorer.smooth(_simScore, sample);
 
+    // Combo: +1 per on-pitch window, reset after two consecutive misses.
+    if (pitchScore >= 70) {
+      _pitchMissStreak = 0;
+      _simCombo++;
+    } else {
+      _pitchMissStreak++;
+      if (_pitchMissStreak >= 2) _simCombo = 0;
+    }
+
     _simPitch = pitchScore;
     _simTiming = timingScore;
     _simConsistency = consistency;
@@ -261,6 +292,7 @@ class KaraokePlaybackService {
       consistency: _simConsistency,
       energy: _simEnergy,
       speed: _simSpeed,
+      combo: _simCombo,
     );
     _stateController.add(_current);
   }
@@ -288,6 +320,7 @@ class KaraokePlaybackService {
   /// Play a backing track from a URL (mp3, ogg, etc.).
   Future<void> playUrl(String url) async {
     _simTimer?.cancel();
+    _lastAudioFailed = false;
     try {
       await _player.setUrl(url);
       _current = _current.copyWith(isPlaying: true);
@@ -319,6 +352,7 @@ class KaraokePlaybackService {
       await _player.play();
     } catch (e) {
       // If real audio fails, fall back to simulated
+      _lastAudioFailed = true;
       playSimulated();
     }
   }
@@ -326,6 +360,7 @@ class KaraokePlaybackService {
   /// Play from a local asset path.
   Future<void> playAsset(String assetPath) async {
     _simTimer?.cancel();
+    _lastAudioFailed = false;
     try {
       await _player.setAsset(assetPath);
       _current = _current.copyWith(isPlaying: true);
@@ -353,6 +388,7 @@ class KaraokePlaybackService {
 
       await _player.play();
     } catch (e) {
+      _lastAudioFailed = true;
       playSimulated();
     }
   }
@@ -360,6 +396,8 @@ class KaraokePlaybackService {
   // ─── Simulated Playback (Dev / No Audio Files) ────────
 
   /// Start simulated playback — advances time at 1x speed without audio.
+  /// Demo scoring runs only when this is called outside a mic session; with
+  /// a mic connected the score comes from live audio analysis instead.
   void playSimulated() {
     _simTimer?.cancel();
     _current = _current.copyWith(isPlaying: true);
@@ -496,8 +534,10 @@ class KaraokePlaybackService {
       }
     }
 
-    // Update simulated scoring
-    if (currentIndex != _simLineIndex && currentIndex >= 0) {
+    // Update simulated scoring — demo mode only. In a real mic session the
+    // score comes exclusively from _onMicData; fake per-line bonuses must
+    // not run alongside it.
+    if (!_micSession && currentIndex != _simLineIndex && currentIndex >= 0) {
       _simLineIndex = currentIndex;
       _simCombo++;
       // Bounded simulated scores for dev/demo playback: each new line adds a

@@ -67,9 +67,10 @@ class _SingingScreenState extends State<SingingScreen>
     if (_karaokeStream == null) {
       _karaoke = Provider.of<KaraokePlaybackService>(context, listen: false);
       _mic = Provider.of<MicInputService>(context, listen: false);
-      // Load fixture song and start simulated playback
+      // Load fixture song and start a real session: mic data drives the
+      // score (backing track plays when the song has one).
       _karaoke!.loadSong(fixtureSongs.first);
-      _karaoke!.playSimulated();
+      _karaoke!.playWithMic();
       _karaokeStream = _karaoke!.stateStream;
 
       // Start from a clean score slate for this performance.
