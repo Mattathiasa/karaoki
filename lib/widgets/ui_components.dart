@@ -127,20 +127,27 @@ class KProgressBar extends StatelessWidget {
         color: KColors.bone.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: FractionallySizedBox(
-        alignment: Alignment.centerLeft,
-        widthFactor: progress.clamp(0.0, 1.0),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: KColors.scoreFillGradient,
-            borderRadius: BorderRadius.circular(999),
-            boxShadow: [
-              BoxShadow(
-                color: KColors.lime.withValues(alpha: 0.5),
-                blurRadius: 10,
-                spreadRadius: 1,
-              ),
-            ],
+      // Interpolate toward each new progress value instead of jumping:
+      // KaraokeState ticks in discrete steps, the bar should glide.
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: progress.clamp(0.0, 1.0)),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.linear,
+        builder: (context, value, _) => FractionallySizedBox(
+          alignment: Alignment.centerLeft,
+          widthFactor: value,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: KColors.scoreFillGradient,
+              borderRadius: BorderRadius.circular(999),
+              boxShadow: [
+                BoxShadow(
+                  color: KColors.lime.withValues(alpha: 0.5),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -129,27 +129,36 @@ class _WipedLyricLine extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            // Gradient fill layer (clipped by progress)
-            ClipRect(
-              clipper: _ProgressClipper(progress: progress),
-              child: ShaderMask(
-                shaderCallback: (Rect bounds) {
-                  return const LinearGradient(
-                    colors: [
-                      Color(0xFFFDFDF5), // #FFFDF5
-                      KColors.lime,
-                      KColors.teal,
-                    ],
-                  ).createShader(bounds);
-                },
-                blendMode: BlendMode.srcIn,
-                child: Text(
-                  text,
-                  style: KTypography.displaySection.copyWith(
-                    fontSize: fontSize,
-                    color: Colors.white,
+            // Gradient fill layer, wiped by an interpolated progress so the
+            // fill glides between KaraokeState ticks instead of snapping.
+            // Keyed by text: a new line restarts the wipe at 0 instead of
+            // animating backwards from the previous line's ~1.0.
+            TweenAnimationBuilder<double>(
+              key: ValueKey(text),
+              tween: Tween(begin: 0.0, end: progress.clamp(0.0, 1.0)),
+              duration: const Duration(milliseconds: 120),
+              curve: Curves.linear,
+              builder: (context, value, _) => ClipRect(
+                clipper: _ProgressClipper(progress: value),
+                child: ShaderMask(
+                  shaderCallback: (Rect bounds) {
+                    return const LinearGradient(
+                      colors: [
+                        Color(0xFFFDFDF5), // #FFFDF5
+                        KColors.lime,
+                        KColors.teal,
+                      ],
+                    ).createShader(bounds);
+                  },
+                  blendMode: BlendMode.srcIn,
+                  child: Text(
+                    text,
+                    style: KTypography.displaySection.copyWith(
+                      fontSize: fontSize,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ),
             ),
