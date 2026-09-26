@@ -47,6 +47,14 @@ class AppState extends ChangeNotifier {
   int get userLevel => _userLevel;
   bool get isGuest => _isGuest;
 
+  /// True when the user picked a real display name. The default "Player"
+  /// (or blank) counts as not set — rooms should ask for a name before
+  /// letting someone join, Just Dance style.
+  bool get hasCustomName {
+    final name = _userName.trim();
+    return name.isNotEmpty && name != 'Player';
+  }
+
   /// Load the persisted profile (userId, name, level) from local storage.
   /// Call once at startup; userId survives restarts so rooms/identity are
   /// stable, and name/level set in onboarding are not lost.
