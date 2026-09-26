@@ -17,6 +17,7 @@ class CompleteScreen extends StatefulWidget {
   final int timing;
   final int consistency;
   final int energy;
+  final int speed;
   final bool isNewBest;
   final int previousBest;
   final VoidCallback? onContinue;
@@ -29,6 +30,7 @@ class CompleteScreen extends StatefulWidget {
     this.timing = 88,
     this.consistency = 81,
     this.energy = 95,
+    this.speed = 78,
     this.isNewBest = true,
     this.previousBest = 87,
     this.onContinue,
@@ -58,6 +60,7 @@ class _CompleteScreenState extends State<CompleteScreen> {
     final effectiveTiming = breakdown?.timing ?? widget.timing;
     final effectiveConsistency = breakdown?.consistency ?? widget.consistency;
     final effectiveEnergy = breakdown?.energy ?? widget.energy;
+    final effectiveSpeed = breakdown?.speed ?? widget.speed;
     final effectiveNewBest = breakdown == null ? widget.isNewBest : effectiveScore > widget.previousBest;
 
     return Scaffold(
@@ -109,6 +112,8 @@ class _CompleteScreenState extends State<CompleteScreen> {
               ),
               const SizedBox(height: 10),
               _BreakdownBar(label: 'ENERGY', value: effectiveEnergy, color: KColors.lime),
+              const SizedBox(height: 10),
+              _BreakdownBar(label: 'SPEED', value: effectiveSpeed, color: KColors.tangerine),
               const SizedBox(height: 32),
               // Actions
               Row(
@@ -180,6 +185,7 @@ class _CompleteScreenState extends State<CompleteScreen> {
         timing: breakdown.timing,
         consistency: breakdown.consistency,
         energy: breakdown.energy,
+        speed: breakdown.speed,
         roomId: appState.currentRoom?.id,
         performedAt: DateTime.now(),
       ),

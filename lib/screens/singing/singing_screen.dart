@@ -84,19 +84,21 @@ class _SingingScreenState extends State<SingingScreen>
   /// show the real result of this performance.
   void _finishPerformance(KaraokeState? ks) {
     final appState = context.read<AppState>();
-    // Amplitude history approximates vocal consistency; energy proxies from
-    // the live mic level when active, otherwise from the simulated baseline.
+    // Consistency rides along as its own stat; speed from the live karaoke
+    // state when available, neutral 75 otherwise (no line to pace against).
     final consistency = _recentAmplitudes.isEmpty
         ? 75
         : PitchDetector.scoreTiming(_recentAmplitudes, targetAmplitude: 0.5);
     final energy = isMicActive && _micData != null
         ? (_micData!.amplitude * 100).round().clamp(0, 100)
         : 85;
+    final speed = ks != null && ks.speed > 0 ? ks.speed : 75;
     appState.setLastBreakdown(
       pitch: ks?.pitch ?? 0,
       timing: ks?.timing ?? 0,
       consistency: consistency,
       energy: energy,
+      speed: speed,
     );
     appState.updateLiveScore(ks?.score ?? 0);
 
@@ -116,6 +118,7 @@ class _SingingScreenState extends State<SingingScreen>
         timing: ks?.timing ?? 0,
         consistency: consistency,
         energy: energy,
+        speed: speed,
         roomId: appState.currentRoom?.id,
         performedAt: DateTime.now(),
       ),
@@ -128,6 +131,11 @@ class _SingingScreenState extends State<SingingScreen>
         'roomId': room.id,
         'singerId': appState.userId,
         'score': ks?.score ?? 0,
+        'pitch': ks?.pitch ?? 0,
+        'timing': ks?.timing ?? 0,
+        'consistency': consistency,
+        'energy': energy,
+        'speed': speed,
         'songId': ks?.song.id ?? '',
       });
     }
@@ -163,6 +171,9 @@ class _SingingScreenState extends State<SingingScreen>
       'score': ks.score,
       'pitch': ks.pitch,
       'timing': ks.timing,
+      'consistency': ks.consistency,
+      'energy': ks.energy,
+      'speed': ks.speed,
       'combo': ks.combo,
       'progress': ks.overallProgress,
     });
@@ -246,8 +257,6 @@ class _SingingScreenState extends State<SingingScreen>
     final lineProgress = ks.lineProgress;
     final progress = ks.overallProgress;
     final pitch = ks.pitch;
-    final timing = ks.timing;
-    final combo = ks.combo;
     final score = ks.score;
     final elapsed = ks.positionLabel;
     final duration = ks.durationLabel;
@@ -408,15 +417,15 @@ class _SingingScreenState extends State<SingingScreen>
                 ),
                 const SizedBox(width: 8),
                 _MetricCard(
-                  label: 'TIMING',
-                  value: '$timing%',
-                  color: KColors.gold,
+                  label: 'CONSISTENCY',
+                  value: '${ks.consistency}%',
+                  color: KColors.tangerine,
                 ),
                 const SizedBox(width: 8),
                 _MetricCard(
-                  label: 'COMBO',
-                  value: 'x$combo',
-                  color: KColors.lime,
+                  label: 'SPEED',
+                  value: '${ks.speed}%',
+                  color: KColors.teal,
                 ),
               ]),
             ),

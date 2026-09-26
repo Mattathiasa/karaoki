@@ -13,6 +13,7 @@ class PerformanceRecord {
   final int timing;
   final int consistency;
   final int energy;
+  final int speed;
   final String? roomId;
   final DateTime performedAt;
 
@@ -25,6 +26,7 @@ class PerformanceRecord {
     required this.timing,
     required this.consistency,
     required this.energy,
+    this.speed = 0,
     this.roomId,
     required this.performedAt,
   });
@@ -38,6 +40,7 @@ class PerformanceRecord {
     'timing': timing,
     'consistency': consistency,
     'energy': energy,
+    'speed': speed,
     'roomId': roomId,
     'performedAt': performedAt.millisecondsSinceEpoch,
   };

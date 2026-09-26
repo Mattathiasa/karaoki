@@ -7,7 +7,9 @@ import '../../widgets/lyrics.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/ui_components.dart';
 import '../../services/karaoke_playback_service.dart';
+import '../../models/room.dart';
 import '../../models/song.dart';
+import '../../providers/app_state.dart';
 
 /// Board/TV performance screen — shows large lyrics, pitch gauge, score, combo.
 /// Subscribes to [KaraokePlaybackService] for real-time lyric sync and scoring.
@@ -32,11 +34,23 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
     super.didChangeDependencies();
     if (_stream == null) {
       _playback = Provider.of<KaraokePlaybackService>(context, listen: false);
-      // Load the first fixture song and start simulated playback
-      _playback.loadSong(fixtureSongs.first);
+      // Load the queued/current song (falls back to a fixture) and start
+      // simulated playback for the board demo.
+      _playback.loadSong(_resolveSong(context.read<AppState>()));
       _playback.playSimulated();
       _stream = _playback.stateStream;
     }
+  }
+
+  /// Prefer the room's actual current song, then the head of the queue;
+  /// fixture song is the last-resort demo.
+  Song _resolveSong(AppState appState) {
+    final current = appState.currentSong;
+    if (current != null) return current;
+    if (appState.queue.isNotEmpty) {
+      return appState.songForEntry(appState.queue.first);
+    }
+    return fixtureSongs.first;
   }
 
   @override
@@ -59,6 +73,15 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
   }
 
   Widget _buildScreen(KaraokeState s) {
+    // The singer and their live stats come from AppState, which is fed by
+    // perf.tick (performanceUpdate) events from the singing phone via the
+    // RealtimeSyncService event bus.
+    final appState = context.watch<AppState>();
+    final Player? singer = appState.currentPlayer;
+    final liveScore = singer != null
+        ? (appState.scoreFor(singer.id) ?? s.score)
+        : s.score;
+
     return Scaffold(
       backgroundColor: KColors.ink900,
       body: Container(
@@ -212,16 +235,16 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
               ),
               child: Row(
                 children: [
-                  // Now singing
-                  const _BottomColumn(
+                  // Now singing — real player data from AppState
+                  _BottomColumn(
                     label: '01 / NOW SINGING',
                     child: Row(
                       children: [
-                        KAvatar(initial: 'M', size: 50),
-                        SizedBox(width: 12),
+                        KAvatar(initial: singer?.initial ?? '?', size: 50),
+                        const SizedBox(width: 12),
                         Text(
-                          'Matt',
-                          style: TextStyle(
+                          singer?.name ?? 'Singer',
+                          style: const TextStyle(
                             fontFamily: 'BricolageGrotesque',
                             fontWeight: FontWeight.w700,
                             fontSize: 26,
@@ -231,7 +254,8 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                       ],
                     ),
                   ),
-                  // Live score
+                  // Live score — perf.tick value for the current singer when
+                  // the room is connected, local score otherwise
                   _BottomColumn(
                     label: '02 / LIVE SCORE',
                     child: Container(
@@ -244,7 +268,7 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
-                        '${s.score}',
+                        '$liveScore',
                         style: const TextStyle(
                           fontFamily: 'BricolageGrotesque',
                           fontWeight: FontWeight.w800,
@@ -254,7 +278,8 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                       ),
                     ),
                   ),
-                  // Pitch track
+                  // Pitch track — consistency is the volume-stability proxy
+                  // until a BPM track exists; speed is pacing vs syllable rate
                   _BottomColumn(
                     label: '03 / PITCH TRACK',
                     child: Column(
@@ -267,7 +292,21 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                             ),
                             const SizedBox(width: 16),
                             Text(
-                              'TIMING ${s.timing}%',
+                              'CONSISTENCY ${s.consistency}%',
+                              style: KTypography.boardMono.copyWith(fontSize: 13),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Text(
+                              'SPEED ${s.speed}%',
+                              style: KTypography.boardMono.copyWith(fontSize: 13),
+                            ),
+                            const SizedBox(width: 16),
+                            Text(
+                              'ENERGY ${s.energy}%',
                               style: KTypography.boardMono.copyWith(fontSize: 13),
                             ),
                           ],

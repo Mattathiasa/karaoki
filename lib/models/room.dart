@@ -228,12 +228,14 @@ class ScoreBreakdown {
   final int timing;
   final int consistency;
   final int energy;
+  final int speed;
 
   const ScoreBreakdown({
     required this.pitch,
     required this.timing,
     required this.consistency,
     required this.energy,
+    this.speed = 0,
   });
 
   int get overall => ((pitch * 0.4) + (timing * 0.3) + (consistency * 0.15) + (energy * 0.15)).round();

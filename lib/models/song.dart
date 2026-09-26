@@ -36,6 +36,26 @@ class LyricLine {
   final String part; // A, B, BOTH
 
   const LyricLine({required this.t, required this.text, this.part = 'BOTH'});
+
+  /// Syllable-like vowel clusters in this line, used to derive the expected
+  /// singing pace (syllables per second) for the speed metric.
+  int get syllableCount {
+    var count = 0;
+    for (final word in text.split(RegExp(r'[^a-zA-Z]+'))) {
+      if (word.isEmpty) continue;
+      final clusters = RegExp(r'[aeiouy]+', caseSensitive: false)
+          .allMatches(word)
+          .length;
+      count += clusters > 0 ? clusters : 1; // Vowel-less words count once.
+    }
+    return count;
+  }
+
+  /// Expected syllables per second when sung over [lineDurationSeconds].
+  double syllablesPerSecond(double lineDurationSeconds) {
+    if (lineDurationSeconds <= 0) return 0;
+    return syllableCount / lineDurationSeconds;
+  }
 }
 
 /// Fixture songs for testing

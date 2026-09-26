@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../widgets/cards.dart';
+import '../../providers/app_state.dart';
 
 class BoardLeaderboardScreen extends StatelessWidget {
   final String roomName;
@@ -24,6 +26,19 @@ class BoardLeaderboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Prefer live player scores from AppState (fed by performanceUpdate and
+    // performanceComplete events); fall back to constructor entries.
+    final appState = context.watch<AppState>();
+    final liveEntries = appState.players
+        .map((p) => BoardLeaderboardEntry(
+              name: p.name,
+              initial: p.initial,
+              score: appState.scoreFor(p.id) ?? p.score,
+            ))
+        .toList()
+      ..sort((a, b) => b.score.compareTo(a.score));
+    final effectiveEntries = liveEntries.isNotEmpty ? liveEntries : entries;
+
     return Scaffold(
       backgroundColor: KColors.ink900,
       body: Container(
@@ -58,7 +73,7 @@ class BoardLeaderboardScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'AFTER $performances PERFORMANCES · $mode',
+                    'AFTER $performances PERFORMANCES \u00b7 $mode',
                     style: KTypography.boardMono.copyWith(fontSize: 13),
                   ),
                 ],
@@ -74,25 +89,25 @@ class BoardLeaderboardScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     // 2nd
-                    if (entries.length > 1)
+                    if (effectiveEntries.length > 1)
                       _BoardPodiumColumn(
-                        rank: 2, initial: entries[1].initial, name: entries[1].name,
-                        score: entries[1].score, height: 196, avatarSize: 96,
+                        rank: 2, initial: effectiveEntries[1].initial, name: effectiveEntries[1].name,
+                        score: effectiveEntries[1].score, height: 196, avatarSize: 96,
                       ),
                     const SizedBox(width: 32),
                     // 1st
-                    if (entries.isNotEmpty)
+                    if (effectiveEntries.isNotEmpty)
                       _BoardPodiumColumn(
-                        rank: 1, initial: entries[0].initial, name: entries[0].name,
-                        score: entries[0].score, height: 290, avatarSize: 120,
+                        rank: 1, initial: effectiveEntries[0].initial, name: effectiveEntries[0].name,
+                        score: effectiveEntries[0].score, height: 290, avatarSize: 120,
                         showCrown: true,
                       ),
                     const SizedBox(width: 32),
                     // 3rd
-                    if (entries.length > 2)
+                    if (effectiveEntries.length > 2)
                       _BoardPodiumColumn(
-                        rank: 3, initial: entries[2].initial, name: entries[2].name,
-                        score: entries[2].score, height: 148, avatarSize: 80,
+                        rank: 3, initial: effectiveEntries[2].initial, name: effectiveEntries[2].name,
+                        score: effectiveEntries[2].score, height: 148, avatarSize: 80,
                       ),
                   ],
                 ),
@@ -107,20 +122,20 @@ class BoardLeaderboardScreen extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  if (entries.length > 3)
+                  if (effectiveEntries.length > 3)
                     Expanded(
                       child: Row(
                         children: [
                           Text('4', style: KTypography.boardMono.copyWith(fontSize: 16, color: KColors.bone28)),
                           const SizedBox(width: 12),
-                          KAvatar(initial: entries[3].initial, size: 36),
+                          KAvatar(initial: effectiveEntries[3].initial, size: 36),
                           const SizedBox(width: 12),
-                          Text(entries[3].name, style: const TextStyle(
+                          Text(effectiveEntries[3].name, style: const TextStyle(
                             fontFamily: 'BricolageGrotesque', fontWeight: FontWeight.w700,
                             fontSize: 22, color: KColors.bone,
                           )),
                           const SizedBox(width: 16),
-                          Text('${entries[3].score}', style: const TextStyle(
+                          Text('${effectiveEntries[3].score}', style: const TextStyle(
                             fontFamily: 'BricolageGrotesque', fontWeight: FontWeight.w800,
                             fontSize: 26, color: KColors.gold,
                           )),

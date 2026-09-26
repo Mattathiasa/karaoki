@@ -124,6 +124,7 @@ class AppState extends ChangeNotifier {
     _isHost = false;
     _queue = [];
     _currentSingerIndex = 0;
+    _playerScores.clear();
     notifyListeners();
   }
 
@@ -182,6 +183,15 @@ class AppState extends ChangeNotifier {
   int _liveScore = 0;
   int get liveScore => _liveScore;
 
+  /// Live/final score per singer id, fed by performanceUpdate and
+  /// performanceComplete sync events. Lets the board leaderboard and the
+  /// lobby show "how is everyone doing" without touching the players list.
+  final Map<String, int> _playerScores = {};
+  Map<String, int> get playerScores => Map.unmodifiable(_playerScores);
+
+  /// Score for one player, or null when nothing has arrived yet.
+  int? scoreFor(String playerId) => _playerScores[playerId];
+
   /// Final score breakdown of the last completed performance. Populated by
   /// SingingScreen when the performance ends; consumed by CompleteScreen.
   ScoreBreakdown? _lastBreakdown;
@@ -203,12 +213,14 @@ class AppState extends ChangeNotifier {
     required int timing,
     required int consistency,
     required int energy,
+    int speed = 0,
   }) {
     _lastBreakdown = ScoreBreakdown(
       pitch: pitch,
       timing: timing,
       consistency: consistency,
       energy: energy,
+      speed: speed,
     );
     notifyListeners();
   }
@@ -274,6 +286,7 @@ class AppState extends ChangeNotifier {
         final singerId = event.data['singerId'] as String?;
         final score = (event.data['score'] as num?)?.toInt();
         if (singerId != null && score != null) {
+          _playerScores[singerId] = score;
           _players = _players
               .map((p) => p.id == singerId ? p.copyWith(score: score) : p)
               .toList();
@@ -283,6 +296,7 @@ class AppState extends ChangeNotifier {
         final singerId = event.data['singerId'] as String?;
         final score = (event.data['score'] as num?)?.toInt() ?? 0;
         if (singerId != null) {
+          _playerScores[singerId] = score;
           _players = _players
               .map((p) => p.id == singerId ? p.copyWith(score: score) : p)
               .toList();

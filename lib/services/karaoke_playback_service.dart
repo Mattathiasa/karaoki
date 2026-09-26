@@ -4,6 +4,7 @@ import '../models/song.dart';
 import '../models/note_track.dart';
 import 'lrc_parser.dart';
 import 'mic_service.dart';
+import 'performance_scorer.dart';
 
 /// State of the current karaoke playback.
 class KaraokeState {
@@ -21,6 +22,13 @@ class KaraokeState {
   final int pitch;
   final int timing;
   final int combo;
+  /// Amplitude consistency (steady vocals) 0–100. Volume is only a proxy —
+  /// real beat-timing needs a BPM track, so this rides along as its own stat.
+  final int consistency;
+  /// Vocal energy 0–100 from the live mic level.
+  final int energy;
+  /// Pace accuracy 0–100: mic onset rate vs expected syllable rate.
+  final int speed;
 
   const KaraokeState({
     required this.song,
@@ -37,6 +45,9 @@ class KaraokeState {
     this.pitch = 0,
     this.timing = 0,
     this.combo = 0,
+    this.consistency = 0,
+    this.energy = 0,
+    this.speed = 0,
   });
 
   String get positionLabel => _formatDuration(position);
@@ -62,6 +73,9 @@ class KaraokeState {
     int? pitch,
     int? timing,
     int? combo,
+    int? consistency,
+    int? energy,
+    int? speed,
     bool clearPreviousLine = false,
     bool clearNextLine = false,
   }) {
@@ -80,6 +94,9 @@ class KaraokeState {
       pitch: pitch ?? this.pitch,
       timing: timing ?? this.timing,
       combo: combo ?? this.combo,
+      consistency: consistency ?? this.consistency,
+      energy: energy ?? this.energy,
+      speed: speed ?? this.speed,
     );
   }
 }
@@ -106,11 +123,16 @@ class KaraokePlaybackService {
   int _simTiming = 0;
   int _simCombo = 0;
   int _simLineIndex = -1;
+  int _simConsistency = 0;
+  int _simEnergy = 0;
+  int _simSpeed = 75; // Neutral until the first onset rate lands.
 
   // Real mic integration
   StreamSubscription<MicData>? _micSubscription;
   final List<double> _recentAmplitudes = [];
   NoteTrack? _noteTrack; // Target melody notes for pitch scoring
+  final OnsetDetector _onsetDetector = OnsetDetector();
+  int _lastAmplitudeAtMs = 0;
 
   final _stateController = StreamController<KaraokeState>.broadcast();
   Stream<KaraokeState> get stateStream => _stateController.stream;
@@ -136,6 +158,12 @@ class KaraokePlaybackService {
     _simTiming = 0;
     _simCombo = 0;
     _simLineIndex = -1;
+    _simConsistency = 0;
+    _simEnergy = 0;
+    _simSpeed = 75;
+    _recentAmplitudes.clear();
+    _onsetDetector.reset();
+    _lastAmplitudeAtMs = 0;
     _current = KaraokeState(song: song, duration: song.duration);
     _stateController.add(_current);
   }
@@ -166,10 +194,18 @@ class KaraokePlaybackService {
   void _onMicData(MicData data) {
     if (!_current.isPlaying) return;
 
-    // Track recent amplitudes for timing scoring
+    // Track recent amplitudes for consistency scoring
     _recentAmplitudes.add(data.amplitude);
     if (_recentAmplitudes.length > 20) {
       _recentAmplitudes.removeAt(0);
+    }
+
+    // Speed metric: feed the onset detector so we know how fast the singer
+    // is delivering syllables right now.
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (_lastAmplitudeAtMs == 0 || nowMs > _lastAmplitudeAtMs) {
+      _onsetDetector.addSample(data.amplitude, nowMs);
+      _lastAmplitudeAtMs = nowMs;
     }
 
     // Score pitch against the target note from the song's melody
@@ -179,28 +215,72 @@ class KaraokePlaybackService {
     final targetHz = _noteTrack?.hzAt((_current.overallProgress * 100).round()) ?? 440;
     final pitchScore = PitchDetector.scorePitch(data.hz, targetHz);
 
-    // Score timing based on amplitude consistency
+    // Timing: amplitude consistency is the stand-in until a real BPM track
+    // exists (spec item 2 — volume proxy accepted for now).
     final timingScore = PitchDetector.scoreTiming(
       _recentAmplitudes,
       targetAmplitude: 0.5,
     );
 
-    // Update combo on line changes (handled in _updateLyricState)
-    // But accumulate score from real mic
-    if (pitchScore > 60) {
-      _simScore += (pitchScore * 0.5).round();
-    }
+    // Consistency and energy as separate normalized stats.
+    final consistency = PitchDetector.scoreTiming(
+      _recentAmplitudes,
+      targetAmplitude: 0.5,
+    );
+    final energy = PerformanceScorer.energyFromAmplitude(data.amplitude);
+
+    // Speed: mic onset rate vs the current line's expected syllable rate.
+    final expectedRate = _expectedSyllablesPerSecond(_current.currentLineIndex);
+    final speedScore = PerformanceScorer.scoreSpeed(
+      onsetsPerSecond: _onsetDetector.onsetsPerSecond,
+      expectedSyllablesPerSecond: expectedRate,
+    );
+
+    // Spec-weighted blend (pitch 40 / timing 30 / consistency 15 / energy 15),
+    // smoothed with a rolling average so the score is bounded 0–100 instead
+    // of accumulating unbounded.
+    final sample = PerformanceScorer.blend(
+      pitch: pitchScore,
+      timing: timingScore,
+      consistency: consistency,
+      energy: energy,
+    );
+    _simScore = PerformanceScorer.smooth(_simScore, sample);
 
     _simPitch = pitchScore;
     _simTiming = timingScore;
+    _simConsistency = consistency;
+    _simEnergy = energy;
+    _simSpeed = speedScore;
 
     // Emit updated state with real scores
     _current = _current.copyWith(
       score: _simScore,
       pitch: _simPitch,
       timing: _simTiming,
+      consistency: _simConsistency,
+      energy: _simEnergy,
+      speed: _simSpeed,
     );
     _stateController.add(_current);
+  }
+
+  /// Expected syllable rate for the current lyric line in syllables/second.
+  /// The line's time window is derived from its position percentage and the
+  /// next line's; 0 when unknown (instrumental gap / no line active).
+  double _expectedSyllablesPerSecond(int lineIndex) {
+    if (lineIndex < 0 || lineIndex >= _lyrics.length) return 0;
+    final totalSeconds = _song.duration.inMilliseconds / 1000.0;
+    if (totalSeconds <= 0) return 0;
+
+    final startPercent = _lyrics[lineIndex].t;
+    final endPercent = lineIndex + 1 < _lyrics.length
+        ? _lyrics[lineIndex + 1].t
+        : 100;
+    final lineSeconds = (endPercent - startPercent) / 100.0 * totalSeconds;
+    if (lineSeconds <= 0) return 0;
+
+    return _lyrics[lineIndex].syllablesPerSecond(lineSeconds);
   }
 
   // ─── Real Audio Playback ──────────────────────────────
@@ -345,6 +425,12 @@ class KaraokePlaybackService {
     _simTiming = 0;
     _simCombo = 0;
     _simLineIndex = -1;
+    _simConsistency = 0;
+    _simEnergy = 0;
+    _simSpeed = 75;
+    _recentAmplitudes.clear();
+    _onsetDetector.reset();
+    _lastAmplitudeAtMs = 0;
     _current = KaraokeState(
       song: _song,
       duration: _song.duration,
@@ -414,9 +500,14 @@ class KaraokePlaybackService {
     if (currentIndex != _simLineIndex && currentIndex >= 0) {
       _simLineIndex = currentIndex;
       _simCombo++;
-      _simScore += 100 * _simCombo;
+      // Bounded simulated scores for dev/demo playback: each new line adds a
+      // decaying bonus and everything stays within 0–100.
+      _simScore = (_simScore + (20 - _simCombo).clamp(2, 18)).clamp(0, 100);
       _simPitch = (75 + (_simCombo * 3).clamp(0, 20)).clamp(75, 98);
       _simTiming = (80 + (_simCombo * 2).clamp(0, 15)).clamp(80, 99);
+      _simConsistency = _simTiming;
+      _simEnergy = (60 + _simCombo * 2).clamp(60, 95);
+      _simSpeed = (70 + (_simCombo * 3).clamp(0, 30)).clamp(70, 100);
     }
 
     _current = _current.copyWith(
@@ -431,6 +522,9 @@ class KaraokePlaybackService {
       pitch: _simPitch,
       timing: _simTiming,
       combo: _simCombo,
+      consistency: _simConsistency,
+      energy: _simEnergy,
+      speed: _simSpeed,
       clearPreviousLine: previousLine == null,
       clearNextLine: nextLine == null,
     );
