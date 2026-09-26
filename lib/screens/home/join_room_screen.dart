@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +10,7 @@ import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/ui_components.dart';
 import '../../providers/app_state.dart';
+import '../../services/auth_service.dart';
 import '../../services/room_service.dart';
 
 class JoinRoomScreen extends StatefulWidget {
@@ -224,6 +227,9 @@ class _NameGateScreenState extends State<_NameGateScreen> {
       return;
     }
     context.read<AppState>().setUserName(name);
+    // Same as the setup screen: give the guest a stable Firebase UID so
+    // multiplayer sync works across restarts.
+    unawaited(context.read<AuthService>().signInAsGuest());
     // Rebuild switches back to the join form now that hasCustomName holds.
     setState(() {});
   }

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
 import '../../providers/app_state.dart';
+import '../../services/auth_service.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
@@ -234,6 +237,11 @@ class _SetupScreenState extends State<SetupScreen> {
     appState.setUserName(name);
     final level = _levelValues[_selectedLevel];
     if (level != null) appState.setUserLevel(level);
+    // Sign in anonymously so the guest gets a stable Firebase UID: the
+    // timestamp-generated local id would change on every restart and could
+    // not sync with other players through the room's realtime channel.
+    // Fire-and-forget — auth completing must not block entering the app.
+    unawaited(context.read<AuthService>().signInAsGuest());
     widget.onComplete?.call();
   }
 

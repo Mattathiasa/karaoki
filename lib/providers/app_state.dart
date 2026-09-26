@@ -24,7 +24,12 @@ class AppState extends ChangeNotifier {
       return;
     }
     _userId = user.uid;
-    _userName = user.effectiveName;
+    // Anonymous sessions carry no meaningful display name ("Guest"), so
+    // keep whatever name the user picked locally — otherwise the identity
+    // landing after setup would clobber the name they just typed.
+    if (!user.isAnonymous) {
+      _userName = user.effectiveName;
+    }
     _isGuest = user.isAnonymous;
     // Keep the persisted profile in sync with the authenticated identity.
     SharedPreferences.getInstance().then((p) {
