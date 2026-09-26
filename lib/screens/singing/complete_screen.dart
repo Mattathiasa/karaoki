@@ -8,6 +8,7 @@ import '../../theme/spacing.dart';
 import '../../theme/radius.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/cards.dart';
+import '../../widgets/ui_components.dart';
 import '../../providers/app_state.dart';
 import '../../services/performance_history_service.dart';
 
@@ -229,8 +230,11 @@ class _BreakdownBar extends StatelessWidget {
                 color: KColors.bone45,
               ),
             ),
-            Text(
-              '$value%',
+            KCountUpText(
+              value,
+              suffix: '%',
+              duration: const Duration(milliseconds: 900),
+              curve: Curves.easeOutCubic,
               style: KTypography.uiRowTitle.copyWith(
                 fontSize: 13,
                 color: color,
@@ -239,26 +243,32 @@ class _BreakdownBar extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 6),
-        Container(
-          height: 6,
-          decoration: BoxDecoration(
-            color: KColors.ink600,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: value / 100,
-            child: Container(
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(999),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.5),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  ),
-                ],
+        // Fill grows into place alongside its counting number.
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: value / 100),
+          duration: const Duration(milliseconds: 900),
+          curve: Curves.easeOutCubic,
+          builder: (context, v, _) => Container(
+            height: 6,
+            decoration: BoxDecoration(
+              color: KColors.ink600,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: v.clamp(0.0, 1.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.5),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
