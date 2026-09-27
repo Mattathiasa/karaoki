@@ -16,6 +16,7 @@ import '../../services/karaoke_playback_service.dart';
 import '../../services/mic_service.dart';
 import '../../services/performance_history_service.dart';
 import '../../services/realtime_sync_service.dart';
+import '../../services/room_service.dart';
 import '../../models/song.dart';
 import '../../providers/app_state.dart';
 
@@ -67,18 +68,36 @@ class _SingingScreenState extends State<SingingScreen>
     if (_karaokeStream == null) {
       _karaoke = Provider.of<KaraokePlaybackService>(context, listen: false);
       _mic = Provider.of<MicInputService>(context, listen: false);
-      // Load fixture song and start a real session: mic data drives the
-      // score (backing track plays when the song has one).
-      _karaoke!.loadSong(fixtureSongs.first);
+      // Load the song that was actually queued (falls back to a fixture) and
+      // start a real session: mic data drives the score and the backing
+      // track plays when the song has one.
+      final appState = context.read<AppState>();
+      final song = _resolveSong(appState);
+      appState.clearLastBreakdown();
+      appState.clearLiveScores();
+      appState.setCurrentSong(song);
+      _karaoke!.loadSong(song);
       _karaoke!.playWithMic();
       _karaokeStream = _karaoke!.stateStream;
-
-      // Start from a clean score slate for this performance.
-      context.read<AppState>().clearLastBreakdown();
 
       // Initialize mic
       _initMic();
     }
+  }
+
+  /// The song for this performance: the active queue entry, then the current
+  /// song, then the head of the queue, then a fixture as a last resort.
+  Song _resolveSong(AppState appState) {
+    final active = appState.activeEntry;
+    if (active != null) {
+      return appState.songForEntry(active);
+    }
+    final current = appState.currentSong;
+    if (current != null && current.id.isNotEmpty) return current;
+    if (appState.queue.isNotEmpty) {
+      return appState.songForEntry(appState.queue.first);
+    }
+    return fixtureSongs.first;
   }
 
   /// Record the final score breakdown into AppState so CompleteScreen can
@@ -127,6 +146,11 @@ class _SingingScreenState extends State<SingingScreen>
 
     // Tell the room (board + other players) this performance is done.
     final room = appState.currentRoom;
+
+    // Advance the turn loop in both solo and room play: mark this entry
+    // done and promote the next queued one.
+    final next = appState.advanceQueue();
+
     if (room != null) {
       _emitEvent(SyncEventType.performanceComplete, {
         'roomId': room.id,
@@ -139,9 +163,32 @@ class _SingingScreenState extends State<SingingScreen>
         'speed': speed,
         'songId': ks?.song.id ?? '',
       });
+
+      // Drive the board's state machine: revealing → ranking → queue.
+      // Other phones see the same transitions through the room stream.
+      unawaited(_setRoomStatus(room.id, RoomStatus.revealing));
+      unawaited(_emitEvent(SyncEventType.turnAdvanced, {
+        'roomId': room.id,
+        'nextSongId': next?.songId,
+        'nextSingerId': next?.requestedBy,
+      }));
+      Timer(const Duration(seconds: 6), () {
+        unawaited(_setRoomStatus(room.id, RoomStatus.ranking));
+      });
+      Timer(const Duration(seconds: 11), () {
+        unawaited(_setRoomStatus(room.id, RoomStatus.queue));
+      });
     }
 
     widget.onComplete?.call();
+  }
+
+  Future<void> _setRoomStatus(String roomId, RoomStatus status) async {
+    try {
+      await context.read<RoomService>().setStatus(roomId, status);
+    } catch (_) {
+      // Status writes must never break the local flow (offline/stub mode).
+    }
   }
 
   /// Detect a microphone that dropped mid-performance: we had data before
@@ -176,7 +223,8 @@ class _SingingScreenState extends State<SingingScreen>
       'energy': ks.energy,
       'speed': ks.speed,
       'combo': ks.combo,
-      'progress': ks.overallProgress,
+      'progress': (ks.overallProgress * 100).round(),
+      'positionMs': ks.position.inMilliseconds,
     });
   }
 

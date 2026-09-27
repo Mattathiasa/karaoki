@@ -1,0 +1,50 @@
+{
+  "neon-midnight": {
+    "file": "assets/audio/neon-midnight.ogg",
+    "durationSec": 222,
+    "tempo": 112,
+    "sizeKb": 771
+  },
+  "concrete-halo": {
+    "file": "assets/audio/concrete-halo.ogg",
+    "durationSec": 255,
+    "tempo": 124,
+    "sizeKb": 805
+  },
+  "loose-change": {
+    "file": "assets/audio/loose-change.ogg",
+    "durationSec": 178,
+    "tempo": 132,
+    "sizeKb": 612
+  },
+  "slow-gold": {
+    "file": "assets/audio/slow-gold.ogg",
+    "durationSec": 210,
+    "tempo": 84,
+    "sizeKb": 712
+  },
+  "higher-ground": {
+    "file": "assets/audio/higher-ground.ogg",
+    "durationSec": 312,
+    "tempo": 96,
+    "sizeKb": 1006
+  },
+  "yene-fikir": {
+    "file": "assets/audio/yene-fikir.ogg",
+    "durationSec": 245,
+    "tempo": 90,
+    "sizeKb": 820
+  },
+  "tequila-sunrise": {
+    "file": "assets/audio/tequila-sunrise.ogg",
+    "durationSec": 200,
+    "tempo": 118,
+    "sizeKb": 676
+  },
+  "old-sepia": {
+    "file": "assets/audio/old-sepia.ogg",
+    "durationSec": 285,
+    "tempo": 76,
+    "sizeKb": 857
+  }
+}

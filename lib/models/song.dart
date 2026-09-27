@@ -107,6 +107,13 @@ class LyricLine {
 /// Fixture songs — the catalogue used throughout the app.
 /// Each entry points at its LRC asset; SongRepository loads and parses
 /// the lyrics at runtime so we never have to duplicate them here.
+///
+/// Every song also carries a synthesized backing track under
+/// `assets/audio/` — generated from the same notes as its [noteTrack] by
+/// `tool/generate_backing_tracks.py`, so the guide melody the singer hears
+/// matches the frequencies the pitch scorer expects. Tracks are original
+/// compositions (chord pad + bass + guide melody + click), royalty-free by
+/// construction.
 const fixtureSongs = [
   Song(
     id: 'neon-midnight',
@@ -116,6 +123,7 @@ const fixtureSongs = [
     difficulty: 'Medium',
     duration: Duration(minutes: 3, seconds: 42),
     lrcAsset: 'assets/lyrics/neon-midnight.lrc',
+    audioUrl: 'assets/audio/neon-midnight.ogg',
     noteTrack: NoteTrack(songId: 'neon-midnight', notes: [
       TargetNote(t: 5, hz: 330, durationPercent: 8),   // E4
       TargetNote(t: 15, hz: 392, durationPercent: 8),  // G4
@@ -136,6 +144,7 @@ const fixtureSongs = [
     difficulty: 'Hard',
     duration: Duration(minutes: 4, seconds: 15),
     lrcAsset: 'assets/lyrics/concrete-halo.lrc',
+    audioUrl: 'assets/audio/concrete-halo.ogg',
     noteTrack: NoteTrack(songId: 'concrete-halo', notes: [
       TargetNote(t: 8, hz: 220, durationPercent: 6),   // A3
       TargetNote(t: 16, hz: 262, durationPercent: 6),  // C4
@@ -155,6 +164,7 @@ const fixtureSongs = [
     difficulty: 'Easy',
     duration: Duration(minutes: 2, seconds: 58),
     lrcAsset: 'assets/lyrics/loose-change.lrc',
+    audioUrl: 'assets/audio/loose-change.ogg',
     noteTrack: NoteTrack(songId: 'loose-change', notes: [
       TargetNote(t: 5, hz: 294, durationPercent: 5),   // D4
       TargetNote(t: 10, hz: 330, durationPercent: 5),  // E4
@@ -174,6 +184,7 @@ const fixtureSongs = [
     difficulty: 'Medium',
     duration: Duration(minutes: 3, seconds: 30),
     lrcAsset: 'assets/lyrics/slow-gold.lrc',
+    audioUrl: 'assets/audio/slow-gold.ogg',
     noteTrack: NoteTrack(songId: 'slow-gold', notes: [
       TargetNote(t: 6, hz: 330, durationPercent: 7),   // E4
       TargetNote(t: 14, hz: 349, durationPercent: 7),  // F4
@@ -193,6 +204,7 @@ const fixtureSongs = [
     difficulty: 'Hard',
     duration: Duration(minutes: 5, seconds: 12),
     lrcAsset: 'assets/lyrics/higher-ground.lrc',
+    audioUrl: 'assets/audio/higher-ground.ogg',
     noteTrack: NoteTrack(songId: 'higher-ground', notes: [
       TargetNote(t: 8, hz: 262, durationPercent: 6),   // C4
       TargetNote(t: 16, hz: 330, durationPercent: 6),  // E4
@@ -212,6 +224,7 @@ const fixtureSongs = [
     difficulty: 'Medium',
     duration: Duration(minutes: 4, seconds: 5),
     lrcAsset: 'assets/lyrics/yene-fikir.lrc',
+    audioUrl: 'assets/audio/yene-fikir.ogg',
     noteTrack: NoteTrack(songId: 'yene-fikir', notes: [
       TargetNote(t: 8, hz: 294, durationPercent: 7),   // D4
       TargetNote(t: 16, hz: 330, durationPercent: 7),  // E4
@@ -231,6 +244,7 @@ const fixtureSongs = [
     difficulty: 'Easy',
     duration: Duration(minutes: 3, seconds: 20),
     lrcAsset: 'assets/lyrics/tequila-sunrise.lrc',
+    audioUrl: 'assets/audio/tequila-sunrise.ogg',
     noteTrack: NoteTrack(songId: 'tequila-sunrise', notes: [
       TargetNote(t: 5, hz: 330, durationPercent: 5),   // E4
       TargetNote(t: 11, hz: 349, durationPercent: 5),  // F4
@@ -250,6 +264,7 @@ const fixtureSongs = [
     difficulty: 'Hard',
     duration: Duration(minutes: 4, seconds: 45),
     lrcAsset: 'assets/lyrics/old-sepia.lrc',
+    audioUrl: 'assets/audio/old-sepia.ogg',
     noteTrack: NoteTrack(songId: 'old-sepia', notes: [
       TargetNote(t: 10, hz: 262, durationPercent: 7),   // C4
       TargetNote(t: 18, hz: 294, durationPercent: 7),  // D4

@@ -141,6 +141,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
       }));
       await context.read<RoomService>().startGame(appState.currentRoom!.id);
       if (!mounted) return;
+
+      // Promote the first queued song to 'playing' so every client (board
+      // included) knows who sings what. Solo/no-queue skips straight in.
+      final first = appState.nextUpEntry;
+      if (first != null) appState.setActiveEntry(first.entryId);
+
       _routeToGameMode(appState.currentRoom?.mode ?? GameMode.classic);
     } catch (_) {
       messenger.showSnackBar(

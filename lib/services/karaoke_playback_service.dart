@@ -117,6 +117,17 @@ class KaraokePlaybackService {
   Song _song = fixtureSongs.first;
   List<LyricLine> _lyrics = [];
 
+  // Player stream subscriptions — cancelled and re-created whenever a new
+  // audio source is set so repeated loads never stack duplicate listeners.
+  final List<StreamSubscription<dynamic>> _playerSubs = [];
+
+  /// True when a real audio source is loaded into the player. Simulated
+  /// playback (time without audio) is used when this is false.
+  bool _hasAudioSource = false;
+
+  /// True while playback (real or simulated) is running.
+  bool _playing = false;
+
   // Scoring state
   int _simScore = 0;
   int _simPitch = 0;
@@ -154,6 +165,9 @@ class KaraokePlaybackService {
   /// Load a song and its lyrics. If the song has no lyrics, generate
   /// placeholders from the fixture data.
   void loadSong(Song song) {
+    // Switching songs cancels whatever was playing.
+    _simTimer?.cancel();
+    _playing = false;
     _song = song;
     _lyrics = song.lyrics.isNotEmpty
         ? song.lyrics
@@ -203,10 +217,17 @@ class KaraokePlaybackService {
   /// has one, and let live mic data drive the score. Falls back to simulated
   /// playback (time advances without audio) when there is no audio source or
   /// it fails to load — mic scoring keeps working either way.
+  ///
+  /// Asset paths (`assets/...`) are routed to [playAsset]; HTTP(S) URLs go
+  /// to [playUrl].
   Future<void> playWithMic() async {
-    final url = _song.audioUrl;
-    if (url != null && url.isNotEmpty) {
-      await playUrl(url);
+    final source = _song.audioUrl;
+    if (source != null && source.isNotEmpty) {
+      if (source.startsWith('http://') || source.startsWith('https://')) {
+        await playUrl(source);
+      } else {
+        await playAsset(source);
+      }
       if (!_lastAudioFailed) return;
     }
     playSimulated();
@@ -319,38 +340,11 @@ class KaraokePlaybackService {
 
   /// Play a backing track from a URL (mp3, ogg, etc.).
   Future<void> playUrl(String url) async {
-    _simTimer?.cancel();
     _lastAudioFailed = false;
     try {
-      await _player.setUrl(url);
-      _current = _current.copyWith(isPlaying: true);
-      _stateController.add(_current);
-
-      // Listen to position changes
-      _player.positionStream.listen((pos) {
-        _updateLyricState(pos);
-      });
-
-      // Listen to duration changes
-      _player.durationStream.listen((dur) {
-        if (dur != null) {
-          _current = _current.copyWith(duration: dur);
-        }
-      });
-
-      // Listen to player state
-      _player.playerStateStream.listen((state) {
-        final playing = state.playing;
-        _current = _current.copyWith(isPlaying: playing);
-        _stateController.add(_current);
-
-        if (state.processingState == ProcessingState.completed) {
-          _onSongComplete();
-        }
-      });
-
+      await _setSource(() => _player.setUrl(url), url);
       await _player.play();
-    } catch (e) {
+    } catch (_) {
       // If real audio fails, fall back to simulated
       _lastAudioFailed = true;
       playSimulated();
@@ -359,38 +353,47 @@ class KaraokePlaybackService {
 
   /// Play from a local asset path.
   Future<void> playAsset(String assetPath) async {
-    _simTimer?.cancel();
     _lastAudioFailed = false;
     try {
-      await _player.setAsset(assetPath);
-      _current = _current.copyWith(isPlaying: true);
-      _stateController.add(_current);
-
-      _player.positionStream.listen((pos) {
-        _updateLyricState(pos);
-      });
-
-      _player.durationStream.listen((dur) {
-        if (dur != null) {
-          _current = _current.copyWith(duration: dur);
-        }
-      });
-
-      _player.playerStateStream.listen((state) {
-        final playing = state.playing;
-        _current = _current.copyWith(isPlaying: playing);
-        _stateController.add(_current);
-
-        if (state.processingState == ProcessingState.completed) {
-          _onSongComplete();
-        }
-      });
-
+      await _setSource(() => _player.setAsset(assetPath), assetPath);
       await _player.play();
-    } catch (e) {
+    } catch (_) {
       _lastAudioFailed = true;
       playSimulated();
     }
+  }
+
+  /// Load an audio source, wire the player's streams (once per source), and
+  /// mark the session as real-audio. Centralized so playUrl/playAsset stay
+  /// identical and never stack duplicate listeners.
+  Future<void> _setSource(Future<Duration?> Function() load, String source) async {
+    _simTimer?.cancel();
+    for (final sub in _playerSubs) {
+      sub.cancel();
+    }
+    _playerSubs.clear();
+
+    final duration = await load();
+    _hasAudioSource = true;
+
+    if (duration != null && duration > Duration.zero) {
+      _current = _current.copyWith(duration: duration);
+      _stateController.add(_current);
+    }
+
+    _playerSubs.add(_player.positionStream.listen((pos) {
+      if (_playing) _updateLyricState(pos);
+    }));
+
+    _playerSubs.add(_player.playerStateStream.listen((state) {
+      _playing = state.playing;
+      _current = _current.copyWith(isPlaying: state.playing);
+      _stateController.add(_current);
+
+      if (state.processingState == ProcessingState.completed) {
+        _onSongComplete();
+      }
+    }));
   }
 
   // ─── Simulated Playback (Dev / No Audio Files) ────────
@@ -400,6 +403,8 @@ class KaraokePlaybackService {
   /// a mic connected the score comes from live audio analysis instead.
   void playSimulated() {
     _simTimer?.cancel();
+    _hasAudioSource = false;
+    _playing = true;
     _current = _current.copyWith(isPlaying: true);
     _stateController.add(_current);
 
@@ -418,40 +423,61 @@ class KaraokePlaybackService {
 
   Future<void> pause() async {
     _simTimer?.cancel();
-    try {
-      await _player.pause();
-    } catch (_) {}
+    _playing = false;
+    if (_hasAudioSource) {
+      try {
+        await _player.pause();
+      } catch (_) {}
+    }
     _current = _current.copyWith(isPlaying: false);
     _stateController.add(_current);
   }
 
   Future<void> resume() async {
     if (_current.overallProgress >= 1.0) return;
-    try {
-      await _player.play();
-    } catch (_) {
-      // If no audio source, restart simulated
-      playSimulated();
-      return;
+    if (_hasAudioSource) {
+      try {
+        await _player.play();
+        return;
+      } catch (_) {
+        // Real playback unavailable — drop to simulated below.
+      }
     }
-    _current = _current.copyWith(isPlaying: true);
-    _stateController.add(_current);
+    playSimulated();
   }
 
   Future<void> seek(Duration position) async {
+    final wasPlaying = _playing;
     _simTimer?.cancel();
-    try {
-      await _player.seek(position);
-    } catch (_) {}
+    if (_hasAudioSource) {
+      try {
+        await _player.seek(position);
+      } catch (_) {}
+    }
     _updateLyricState(position);
+    // Simulated playback stalls after a seek unless the timer restarts.
+    if (wasPlaying && !_hasAudioSource) {
+      _simTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+        final newPos = _current.position + const Duration(milliseconds: 50);
+        if (newPos >= _current.duration) {
+          _updateLyricState(_current.duration);
+          _onSongComplete();
+          return;
+        }
+        _updateLyricState(newPos);
+      });
+    }
   }
 
   Future<void> stop() async {
     _simTimer?.cancel();
     disconnectMic();
-    try {
-      await _player.stop();
-    } catch (_) {}
+    _playing = false;
+    if (_hasAudioSource) {
+      try {
+        await _player.stop();
+      } catch (_) {}
+    }
     _current = _current.copyWith(isPlaying: false, position: Duration.zero);
     _stateController.add(_current);
   }
@@ -612,6 +638,10 @@ class KaraokePlaybackService {
   void dispose() {
     _simTimer?.cancel();
     _micSubscription?.cancel();
+    for (final sub in _playerSubs) {
+      sub.cancel();
+    }
+    _playerSubs.clear();
     _player.dispose();
     _stateController.close();
   }

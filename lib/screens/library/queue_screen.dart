@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
@@ -9,6 +11,8 @@ import '../../widgets/ui_components.dart';
 import '../../widgets/cards.dart';
 import '../../providers/app_state.dart';
 import '../../models/room.dart';
+import '../../services/room_service.dart';
+import '../../services/realtime_sync_service.dart';
 
 class QueueScreen extends StatelessWidget {
   final VoidCallback? onBack;
@@ -183,15 +187,21 @@ class _RemoveButton extends StatelessWidget {
     return GestureDetector(
       onTap: () async {
         final appState = context.read<AppState>();
+        final roomService = context.read<RoomService>();
+        final sync = context.read<RealtimeSyncService>();
         final room = appState.currentRoom;
+        // Mirror to AppState first so the UI updates instantly, then best-
+        // effort propagate to the room and other clients.
+        appState.removeFromQueue(entryId);
         if (room != null) {
           try {
-            // No removeSong() on the service contract yet; local removal keeps
-            // the UI truthful for this player until server support lands.
-            appState.removeFromQueue(entryId);
+            await roomService.removeSong(room.id, entryId);
           } catch (_) {}
-        } else {
-          appState.removeFromQueue(entryId);
+          unawaited(sync.sendEvent(SyncEvent(
+            type: SyncEventType.songRemoved,
+            senderId: appState.userId,
+            data: {'roomId': room.id, 'entryId': entryId},
+          )));
         }
       },
       child: const Icon(Icons.close, color: KColors.bone28, size: 16),

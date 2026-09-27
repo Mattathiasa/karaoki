@@ -179,6 +179,14 @@ class QueueEntry {
     this.state = QueueEntryState.queued,
   });
 
+  QueueEntry copyWith({int? position, QueueEntryState? state}) => QueueEntry(
+        entryId: entryId,
+        songId: songId,
+        requestedBy: requestedBy,
+        position: position ?? this.position,
+        state: state ?? this.state,
+      );
+
   Map<String, dynamic> toJson() => {
     'entryId': entryId,
     'songId': songId,

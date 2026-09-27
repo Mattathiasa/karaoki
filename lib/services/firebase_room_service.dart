@@ -145,6 +145,18 @@ class FirebaseRoomService implements RoomService {
     return room;
   }
 
+  @override
+  Future<Room?> roomByCode(String code) async {
+    final normalizedCode = code.toUpperCase().trim();
+    final codeSnapshot = await _codeRef(normalizedCode).get();
+    if (!codeSnapshot.exists) return null;
+    final roomId = codeSnapshot.value as String;
+    final roomSnapshot = await _roomRef(roomId).get();
+    if (!roomSnapshot.exists) return null;
+    return Room.fromJson(
+        Map<String, dynamic>.from(roomSnapshot.value as Map));
+  }
+
   // ─── Watch Players (real-time stream) ────────────
   @override
   Stream<List<Player>> watchPlayers(String roomId) {
@@ -221,9 +233,17 @@ class FirebaseRoomService implements RoomService {
   // ─── Start Game ──────────────────────────────────
   @override
   Future<void> startGame(String roomId) async {
-    await _roomRef(roomId).update({
-      'status': RoomStatus.countdown.name,
-    });
+    await setStatus(roomId, RoomStatus.countdown);
+  }
+
+  @override
+  Future<void> removeSong(String roomId, String entryId) async {
+    await _queueRef(roomId).child(entryId).remove();
+  }
+
+  @override
+  Future<void> setStatus(String roomId, RoomStatus status) async {
+    await _roomRef(roomId).update({'status': status.name});
   }
 
   // ─── Leave Room ──────────────────────────────────

@@ -1,87 +1,63 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
 import '../../theme/spacing.dart';
-import '../../widgets/lyrics.dart';
 import '../../widgets/cards.dart';
+import '../../widgets/lyrics.dart';
 import '../../widgets/ui_components.dart';
-import '../../services/karaoke_playback_service.dart';
-import '../../models/room.dart';
-import '../../models/song.dart';
-import '../../providers/app_state.dart';
 
 /// Board/TV performance screen — shows large lyrics, pitch gauge, score, combo.
-/// Subscribes to [KaraokePlaybackService] for real-time lyric sync and scoring.
-class BoardPerformanceScreen extends StatefulWidget {
-  const BoardPerformanceScreen({super.key});
+///
+/// The board never runs its own playback: every value is streamed from the
+/// singing phone via perf.tick (performanceUpdate) events into [AppState],
+/// and passed in here by [TvRoomScope]. This keeps one clock and one score
+/// authority (the phone + server), exactly as FLOWS.md §3 requires.
+class BoardPerformanceScreen extends StatelessWidget {
+  final String songTitle;
+  final String songArtist;
+  final String songGenre;
+  final String singerName;
+  final String singerInitial;
+  final int liveScore;
+  final int pitch;
+  final int consistency;
+  final int speed;
+  final int energy;
+  final int combo;
+  final double overallProgress;
+  final String positionLabel;
+  final String durationLabel;
+  final String? previousLine;
+  final String currentLine;
+  final String? nextLine;
+  final double lineProgress;
+  final List<String> upNext;
 
-  @override
-  State<BoardPerformanceScreen> createState() => _BoardPerformanceScreenState();
-}
-
-class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
-    with SingleTickerProviderStateMixin {
-  late final KaraokePlaybackService _playback;
-  KaraokeState _state = const KaraokeState(song: Song(
-    id: '', title: '', artist: '', genre: '', difficulty: '',
-    duration: Duration.zero,
-  ));
-  Stream<KaraokeState>? _stream;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_stream == null) {
-      _playback = Provider.of<KaraokePlaybackService>(context, listen: false);
-      // Load the queued/current song (falls back to a fixture) and start
-      // simulated playback for the board demo.
-      _playback.loadSong(_resolveSong(context.read<AppState>()));
-      _playback.playSimulated();
-      _stream = _playback.stateStream;
-    }
-  }
-
-  /// Prefer the room's actual current song, then the head of the queue;
-  /// fixture song is the last-resort demo.
-  Song _resolveSong(AppState appState) {
-    final current = appState.currentSong;
-    if (current != null) return current;
-    if (appState.queue.isNotEmpty) {
-      return appState.songForEntry(appState.queue.first);
-    }
-    return fixtureSongs.first;
-  }
-
-  @override
-  void dispose() {
-    _playback.stop();
-    super.dispose();
-  }
+  const BoardPerformanceScreen({
+    super.key,
+    this.songTitle = '',
+    this.songArtist = '',
+    this.songGenre = '',
+    this.singerName = 'Singer',
+    this.singerInitial = '?',
+    this.liveScore = 0,
+    this.pitch = 0,
+    this.consistency = 0,
+    this.speed = 0,
+    this.energy = 0,
+    this.combo = 0,
+    this.overallProgress = 0,
+    this.positionLabel = '0:00',
+    this.durationLabel = '0:00',
+    this.previousLine,
+    this.currentLine = '',
+    this.nextLine,
+    this.lineProgress = 0,
+    this.upNext = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<KaraokeState>(
-      stream: _stream,
-      initialData: _state,
-      builder: (context, snapshot) {
-        final s = snapshot.data ?? _state;
-        _state = s;
-        return _buildScreen(s);
-      },
-    );
-  }
-
-  Widget _buildScreen(KaraokeState s) {
-    // The singer and their live stats come from AppState, which is fed by
-    // perf.tick (performanceUpdate) events from the singing phone via the
-    // RealtimeSyncService event bus.
-    final appState = context.watch<AppState>();
-    final Player? singer = appState.currentPlayer;
-    final liveScore = singer != null
-        ? (appState.scoreFor(singer.id) ?? s.score)
-        : s.score;
-
     return Scaffold(
       backgroundColor: KColors.ink900,
       body: Container(
@@ -126,7 +102,7 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        s.song.title,
+                        songTitle,
                         style: const TextStyle(
                           fontFamily: 'BricolageGrotesque',
                           fontWeight: FontWeight.w700,
@@ -135,7 +111,9 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                         ),
                       ),
                       Text(
-                        '${s.song.artist} \u00b7 ${s.song.genre}',
+                        songGenre.isEmpty
+                            ? songArtist
+                            : '$songArtist \u00b7 $songGenre',
                         style: KTypography.boardMono.copyWith(fontSize: 14),
                       ),
                     ],
@@ -164,19 +142,6 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Mode pill
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: KColors.ink600,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      'CLASSIC',
-                      style: KTypography.boardMono.copyWith(fontSize: 13),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
                   // Time
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -185,7 +150,7 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                      '${s.positionLabel} / ${s.durationLabel}',
+                      '$positionLabel / $durationLabel',
                       style: KTypography.boardMono.copyWith(fontSize: 13),
                     ),
                   ),
@@ -196,7 +161,7 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
             // Progress bar
             Padding(
               padding: const EdgeInsets.fromLTRB(44, 16, 44, 0),
-              child: KProgressBar(progress: s.overallProgress, height: 5),
+              child: KProgressBar(progress: overallProgress.clamp(0.0, 1.0), height: 5),
             ),
 
             // Lyrics (dominant centre)
@@ -205,12 +170,12 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                 padding: const EdgeInsets.symmetric(
                   horizontal: KSpacing.boardPadding * 2,
                 ),
-                child: s.currentLine.isNotEmpty
+                child: currentLine.isNotEmpty
                     ? KBoardLyricWidget(
-                        previousLine: s.previousLine,
-                        currentLine: s.currentLine,
-                        nextLine: s.nextLine,
-                        lineProgress: s.lineProgress,
+                        previousLine: previousLine,
+                        currentLine: currentLine,
+                        nextLine: nextLine,
+                        lineProgress: lineProgress,
                       )
                     : const Center(
                         child: Text(
@@ -235,15 +200,15 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
               ),
               child: Row(
                 children: [
-                  // Now singing — real player data from AppState
+                  // Now singing
                   _BottomColumn(
                     label: '01 / NOW SINGING',
                     child: Row(
                       children: [
-                        KAvatar(initial: singer?.initial ?? '?', size: 50),
+                        KAvatar(initial: singerInitial, size: 50),
                         const SizedBox(width: 12),
                         Text(
-                          singer?.name ?? 'Singer',
+                          singerName,
                           style: const TextStyle(
                             fontFamily: 'BricolageGrotesque',
                             fontWeight: FontWeight.w700,
@@ -254,8 +219,7 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                       ],
                     ),
                   ),
-                  // Live score — perf.tick value for the current singer when
-                  // the room is connected, local score otherwise
+                  // Live score
                   _BottomColumn(
                     label: '02 / LIVE SCORE',
                     child: Container(
@@ -281,25 +245,24 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                       ),
                     ),
                   ),
-                  // Pitch track — consistency is the volume-stability proxy
-                  // until a BPM track exists; speed is pacing vs syllable rate
+                  // Pitch track
                   _BottomColumn(
                     label: '03 / PITCH TRACK',
                     child: Column(
                       children: [
                         Row(
                           children: [
-                            KCountUpText(s.pitch, prefix: 'PITCH ', suffix: '%', duration: const Duration(milliseconds: 500), style: KTypography.boardMono.copyWith(fontSize: 13)),
+                            KCountUpText(pitch, prefix: 'PITCH ', suffix: '%', duration: const Duration(milliseconds: 500), style: KTypography.boardMono.copyWith(fontSize: 13)),
                             const SizedBox(width: 16),
-                            KCountUpText(s.consistency, prefix: 'CONSISTENCY ', suffix: '%', duration: const Duration(milliseconds: 500), style: KTypography.boardMono.copyWith(fontSize: 13)),
+                            KCountUpText(consistency, prefix: 'CONSISTENCY ', suffix: '%', duration: const Duration(milliseconds: 500), style: KTypography.boardMono.copyWith(fontSize: 13)),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            KCountUpText(s.speed, prefix: 'SPEED ', suffix: '%', duration: const Duration(milliseconds: 500), style: KTypography.boardMono.copyWith(fontSize: 13)),
+                            KCountUpText(speed, prefix: 'SPEED ', suffix: '%', duration: const Duration(milliseconds: 500), style: KTypography.boardMono.copyWith(fontSize: 13)),
                             const SizedBox(width: 16),
-                            KCountUpText(s.energy, prefix: 'ENERGY ', suffix: '%', duration: const Duration(milliseconds: 500), style: KTypography.boardMono.copyWith(fontSize: 13)),
+                            KCountUpText(energy, prefix: 'ENERGY ', suffix: '%', duration: const Duration(milliseconds: 500), style: KTypography.boardMono.copyWith(fontSize: 13)),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -329,8 +292,8 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                             child: child,
                           ),
                           child: Text(
-                            'x${s.combo}',
-                            key: ValueKey(s.combo),
+                            'x$combo',
+                            key: ValueKey(combo),
                             style: const TextStyle(
                               fontFamily: 'BricolageGrotesque',
                               fontWeight: FontWeight.w800,
@@ -361,7 +324,7 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                     style: KTypography.boardMono.copyWith(fontSize: 13),
                   ),
                   const SizedBox(width: 16),
-                  ...fixtureSongs.skip(1).take(3).map((song) => Container(
+                  ...upNext.map((title) => Container(
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -372,7 +335,7 @@ class _BoardPerformanceScreenState extends State<BoardPerformanceScreen>
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                      '${song.title} \u00b7 ${song.artist}',
+                      title,
                       style: KTypography.boardMono.copyWith(fontSize: 12),
                     ),
                   )),
@@ -408,11 +371,4 @@ class _BottomColumn extends StatelessWidget {
       ),
     );
   }
-}
-
-class QueuePill {
-  final String title;
-  final String requester;
-
-  const QueuePill({required this.title, required this.requester});
 }

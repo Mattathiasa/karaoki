@@ -103,7 +103,8 @@ class BoardRevealScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Rank pill                     KRankBadge(rank: rank),
+                    // Rank pill
+                    KRankBadge(rank: rank),
                     if (isNewRecord) ...[
                       const SizedBox(height: 16),
                       Container(

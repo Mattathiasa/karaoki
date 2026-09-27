@@ -154,7 +154,8 @@ final List<BoardPlayer> players;
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: QrImageView(
-                        data: 'https://zemaoki.app/join/$roomCode',
+                        // Deep link handled by the app's /join?code= route.
+                        data: 'zemaoki://join?code=$roomCode',
                         version: QrVersions.auto,
                         size: 176,
                         backgroundColor: KColors.bone,

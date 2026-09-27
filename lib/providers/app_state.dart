@@ -136,6 +136,7 @@ class AppState extends ChangeNotifier {
     _players = [];
     _isHost = false;
     _queue = [];
+    _activeEntryId = null;
     _currentSingerIndex = 0;
     _playerScores.clear();
     notifyListeners();
@@ -181,6 +182,78 @@ class AppState extends ChangeNotifier {
   int _currentSingerIndex = 0;
   int get currentSingerIndex => _currentSingerIndex;
 
+  /// Id of the queue entry being performed right now (or null between
+  /// songs). Drives the turn loop: the singer is this entry's requester and
+  /// [advanceQueue] marks it done and selects the next entry.
+  String? _activeEntryId;
+  String? get activeEntryId => _activeEntryId;
+
+  /// The queue entry currently being performed.
+  QueueEntry? get activeEntry {
+    if (_activeEntryId == null) return null;
+    for (final e in _queue) {
+      if (e.entryId == _activeEntryId) return e;
+    }
+    return null;
+  }
+
+  /// Next entry to perform: the active one, otherwise the first still-
+  /// queued entry, in position order.
+  QueueEntry? get nextUpEntry {
+    final active = activeEntry;
+    if (active != null) return active;
+    final queued = _queue
+        .where((e) => e.state == QueueEntryState.queued)
+        .toList()
+      ..sort((a, b) => a.position.compareTo(b.position));
+    return queued.isEmpty ? null : queued.first;
+  }
+
+  /// Songs still waiting to be performed (excludes the active one), in
+  /// position order — feeds the board's UP NEXT rail and the lobby's
+  /// "who is after me" hints.
+  List<QueueEntry> get upcomingEntries {
+    final activeId = _activeEntryId;
+    final upcoming = _queue
+        .where((e) =>
+            e.state == QueueEntryState.queued && e.entryId != activeId)
+        .toList()
+      ..sort((a, b) => a.position.compareTo(b.position));
+    return upcoming;
+  }
+
+  /// Mark [entryId] as the entry being performed.
+  void setActiveEntry(String? entryId) {
+    _activeEntryId = entryId;
+    if (entryId != null) {
+      _queue = _queue
+          .map((e) => e.entryId == entryId
+              ? e.copyWith(state: QueueEntryState.playing)
+              : e)
+          .toList();
+    }
+    notifyListeners();
+  }
+
+  /// Advance the turn: mark the current entry done and promote the next
+  /// queued entry to playing. Returns the new active entry, or null when
+  /// the queue is finished.
+  QueueEntry? advanceQueue() {
+    _queue = _queue
+        .map((e) => e.entryId == _activeEntryId
+            ? e.copyWith(state: QueueEntryState.done)
+            : e)
+        .toList();
+    _activeEntryId = null;
+    final next = nextUpEntry;
+    if (next != null) {
+      setActiveEntry(next.entryId);
+    } else {
+      notifyListeners();
+    }
+    return next;
+  }
+
   void nextSinger() {
     _currentSingerIndex = (_currentSingerIndex + 1) % _players.length;
     notifyListeners();
@@ -204,6 +277,20 @@ class AppState extends ChangeNotifier {
 
   /// Score for one player, or null when nothing has arrived yet.
   int? scoreFor(String playerId) => _playerScores[playerId];
+
+  /// Reset all live scores (start of a new performance or new game).
+  void clearLiveScores() {
+    _playerScores.clear();
+    _liveMetrics.clear();
+    notifyListeners();
+  }
+
+  /// Latest live metrics (pitch/timing/consistency/energy/speed/combo/
+  /// progress) per singer, fed by perf.tick (performanceUpdate) events.
+  /// The board reads these to mirror the singing phone between full ticks.
+  final Map<String, Map<String, int>> _liveMetrics = {};
+  Map<String, int> liveMetricsFor(String singerId) =>
+      Map.unmodifiable(_liveMetrics[singerId] ?? const {});
 
   /// Final score breakdown of the last completed performance. Populated by
   /// SingingScreen when the performance ends; consumed by CompleteScreen.
@@ -287,6 +374,11 @@ class AppState extends ChangeNotifier {
         final name = event.data['name'] as String? ?? 'Player';
         if (id != null && !_players.any((p) => p.id == id)) {
           _players = [..._players, Player(id: id, name: name, level: 1)];
+        } else if (id != null) {
+          // Already known: refresh the name in case it changed.
+          _players = _players
+              .map((p) => p.id == id ? p.copyWith(name: name) : p)
+              .toList();
         }
         break;
       case SyncEventType.playerLeft:
@@ -303,6 +395,10 @@ class AppState extends ChangeNotifier {
           _players = _players
               .map((p) => p.id == singerId ? p.copyWith(score: score) : p)
               .toList();
+          _liveMetrics[singerId] = {
+            for (final entry in event.data.entries)
+              if (entry.value is num) entry.key: (entry.value as num).toInt(),
+          };
         }
         break;
       case SyncEventType.performanceComplete:
@@ -313,12 +409,46 @@ class AppState extends ChangeNotifier {
           _players = _players
               .map((p) => p.id == singerId ? p.copyWith(score: score) : p)
               .toList();
+          // Carry the final breakdown over for screens that render the
+          // result of the remote performance (board reveal, room history).
+          _lastBreakdown = ScoreBreakdown(
+            pitch: (event.data['pitch'] as num?)?.toInt() ?? 0,
+            timing: (event.data['timing'] as num?)?.toInt() ?? 0,
+            consistency: (event.data['consistency'] as num?)?.toInt() ?? 0,
+            energy: (event.data['energy'] as num?)?.toInt() ?? 0,
+            speed: (event.data['speed'] as num?)?.toInt() ?? 0,
+          );
+        }
+        break;
+      case SyncEventType.songAdded:
+        final songId = event.data['songId'] as String?;
+        final requester =
+            event.data['requestedBy'] as String? ?? event.senderId;
+        if (songId != null) {
+          final entryId =
+              'entry-$songId-$requester-${event.timestamp.millisecondsSinceEpoch}';
+          if (!_queue.any(
+              (e) => e.songId == songId && e.requestedBy == requester)) {
+            _queue = [
+              ..._queue,
+              QueueEntry(
+                entryId: entryId,
+                songId: songId,
+                requestedBy: requester,
+                position: _queue.length + 1,
+              ),
+            ];
+          }
+        }
+        break;
+      case SyncEventType.songRemoved:
+        final removedId = event.data['entryId'] as String?;
+        if (removedId != null) {
+          _queue = _queue.where((e) => e.entryId != removedId).toList();
         }
         break;
       case SyncEventType.gameStarted:
       case SyncEventType.turnAdvanced:
-      case SyncEventType.songAdded:
-      case SyncEventType.songRemoved:
       case SyncEventType.chatMessage:
       case SyncEventType.ping:
       case SyncEventType.pong:

@@ -56,15 +56,6 @@ import 'screens/leaderboard/achievements_screen.dart';
 import 'screens/leaderboard/profile_screen.dart';
 import 'screens/leaderboard/settings_screen.dart';
 
-// Board
-import 'screens/board/board_wait_screen.dart';
-import 'screens/board/board_countdown_screen.dart';
-import 'screens/board/board_queue_screen.dart';
-import 'screens/board/board_performance_screen.dart';
-import 'screens/board/board_vs_screen.dart';
-import 'screens/board/board_reveal_screen.dart';
-import 'screens/board/board_leaderboard_screen.dart';
-
 // Game modes
 import 'screens/game_modes/game_modes.dart';
 
@@ -72,8 +63,8 @@ import 'screens/game_modes/game_modes.dart';
 import 'screens/edge_states/edge_states.dart';
 
 // Widgets
-import 'widgets/board_shell.dart';
 import 'widgets/app_shell.dart';
+import 'widgets/tv_scope.dart';
 
 /// Whether Firebase is properly configured with real credentials.
 bool _isFirebaseConfigured = false;
@@ -128,6 +119,17 @@ void main() async {
 
 // ─── Navigator Keys ────────────────────────────────
 final _shellKey = GlobalKey<NavigatorState>();
+
+/// True when the room/app still has a queue entry waiting to be performed —
+/// decides whether "Continue singing" loops into the next turn.
+bool appStateQueueActive(BuildContext ctx) {
+  try {
+    final appState = ctx.read<AppState>();
+    return appState.nextUpEntry != null;
+  } catch (_) {
+    return false;
+  }
+}
 
 /// Bridges the realtime event bus into AppState: every incoming sync event
 /// (player joins/leaves, ready toggles, live scores) is applied to the shared
@@ -305,7 +307,9 @@ final _router = GoRouter(
         GoRoute(
           path: '/complete',
           builder: (ctx, state) => CompleteScreen(
-            onContinue: () => ctx.go('/queue'),
+            onContinue: () => appStateQueueActive(ctx)
+                ? ctx.go('/turn-next')
+                : ctx.go('/queue'),
             onLeaderboard: () => ctx.go('/leaderboard'),
           ),
         ),
@@ -342,24 +346,20 @@ final _router = GoRouter(
     ),
 
     // ── Board / TV Routes (full-screen, no bottom nav) ──
+    // /tv?code=KARA-XXXX joins the room as a spectator board and derives
+    // its screen purely from room status. Any /tv/* path renders the same
+    // state-driven scope so stale deep links still land somewhere live.
     GoRoute(
       path: '/tv',
-      builder: (ctx, state) {
-        final roomCode = state.uri.queryParameters['code'] ?? 'KARA-0000';
-        return BoardShell(
-          child: BoardWaitScreen(
-            roomCode: roomCode,
-            roomName: 'Party Room',
-          ),
-        );
-      },
+      builder: (ctx, state) =>
+          TvRoomScope(roomCode: state.uri.queryParameters['code']),
     ),
-    GoRoute(path: '/tv/countdown', builder: (ctx, state) => const BoardShell(child: BoardCountdownScreen())),
-    GoRoute(path: '/tv/queue', builder: (ctx, state) => const BoardShell(child: BoardQueueScreen())),
-    GoRoute(path: '/tv/performance', builder: (ctx, state) => const BoardShell(child: BoardPerformanceScreen())),
-    GoRoute(path: '/tv/vs', builder: (ctx, state) => const BoardShell(child: BoardVsScreen())),
-    GoRoute(path: '/tv/reveal', builder: (ctx, state) => const BoardShell(child: BoardRevealScreen())),
-    GoRoute(path: '/tv/leaderboard', builder: (ctx, state) => const BoardShell(child: BoardLeaderboardScreen())),
+    GoRoute(path: '/tv/countdown', builder: (ctx, state) => const TvRoomScope()),
+    GoRoute(path: '/tv/queue', builder: (ctx, state) => const TvRoomScope()),
+    GoRoute(path: '/tv/performance', builder: (ctx, state) => const TvRoomScope()),
+    GoRoute(path: '/tv/vs', builder: (ctx, state) => const TvRoomScope()),
+    GoRoute(path: '/tv/reveal', builder: (ctx, state) => const TvRoomScope()),
+    GoRoute(path: '/tv/leaderboard', builder: (ctx, state) => const TvRoomScope()),
 
     // ── Game Mode Routes (full-screen) ──
     GoRoute(path: '/battle', builder: (ctx, state) => const BattleScreen()),

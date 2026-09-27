@@ -12,6 +12,10 @@ abstract class RoomService {
 
   Future<Room> joinRoom({required String code, required String userId});
 
+  /// Resolve a room from its join code *without* joining it. Used by the
+  /// TV board, which spectates the room rather than occupying a seat.
+  Future<Room?> roomByCode(String code);
+
   Stream<List<Player>> watchPlayers(String roomId);
 
   Stream<Room> watchRoom(String roomId);
@@ -19,6 +23,14 @@ abstract class RoomService {
   Future<void> toggleReady(String roomId, String playerId);
 
   Future<void> addSong(String roomId, String songId, String requestedBy);
+
+  /// Remove a queue entry. Implementations match on [entryId].
+  Future<void> removeSong(String roomId, String entryId);
+
+  /// Transition the room to [status] (the board derives its screen from
+  /// this). Used by the turn loop: countdown → performing → revealing →
+  /// ranking → queue.
+  Future<void> setStatus(String roomId, RoomStatus status);
 
   Future<void> startGame(String roomId);
 
@@ -142,8 +154,41 @@ class StubRoomService implements RoomService {
   }
 
   @override
+  Future<Room?> roomByCode(String code) async {
+    final normalized = code.toUpperCase().trim();
+    for (final room in _rooms.values) {
+      if (room.code == normalized) return room;
+    }
+    return null;
+  }
+
+  @override
   Future<void> startGame(String roomId) async {
-    _rooms[roomId] = _rooms[roomId]!.copyWith(status: RoomStatus.countdown);
+    await setStatus(roomId, RoomStatus.countdown);
+  }
+
+  @override
+  Future<void> removeSong(String roomId, String entryId) async {
+    final entries = _queue[roomId];
+    if (entries == null) return;
+    entries.removeWhere((e) => e.entryId == entryId);
+    // Renumber positions so the queue stays ordered.
+    for (int i = 0; i < entries.length; i++) {
+      entries[i] = QueueEntry(
+        entryId: entries[i].entryId,
+        songId: entries[i].songId,
+        requestedBy: entries[i].requestedBy,
+        position: i + 1,
+        state: entries[i].state,
+      );
+    }
+  }
+
+  @override
+  Future<void> setStatus(String roomId, RoomStatus status) async {
+    final room = _rooms[roomId];
+    if (room == null) return;
+    _rooms[roomId] = room.copyWith(status: status);
     _roomControllers[roomId]?.add(_rooms[roomId]!);
   }
 
